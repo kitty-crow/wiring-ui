@@ -38,7 +38,7 @@ export class WireRouter {
   }
   /** Route every conductor once per crossover pass, rather than once per pair. */
   public crossings(): Crossing[] {
-    const drawn=this.model.project.wires.map(wire=>({wire,legs:this.segments(wire)}));
+    const drawn=this.model.project.wires.map(wire=>({wire,legs:this.crossingSegments(wire)}));
     const found:Crossing[]=[];
     for (let i=0;i<drawn.length;i++) {
       const a=drawn[i];
@@ -54,6 +54,12 @@ export class WireRouter {
       }
     }
     return found;
+  }
+
+  /** Collinear manual waypoints must not suppress a printed crossover bridge. */
+  private crossingSegments(wire:Wire):Segment[] {
+    const route=OrthogonalGeometry.normalise(this.path(wire));
+    return route.slice(1).map((b,index)=>({a:route[index]??b,b}));
   }
 
   private detectCrossings(
