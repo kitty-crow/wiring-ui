@@ -33,6 +33,8 @@ jobs:
         run: bunx playwright install --with-deps chromium
       - name: Audit responsive layouts using pinned Pages template
         run: bun vendor/pages/src/cli.ts audit-mobile dist
+      - name: Browser smoke test of production bundle
+        run: bun scripts/browser-smoke.mts
       - name: Verify deployable artefact
         run: |
           test -s dist/index.html
