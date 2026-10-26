@@ -29,8 +29,14 @@ jobs:
         run: bun run validate
       - name: Build self-contained HTML
         run: bun scripts/build.mts
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: wiring-ui-playwright-chromium-${{ runner.os }}-${{ hashFiles('package.json') }}
       - name: Install Chromium for responsive audit
-        run: bunx playwright install --with-deps chromium
+        timeout-minutes: 5
+        run: bunx playwright install chromium
       - name: Audit responsive layouts using pinned Pages template
         run: bun vendor/pages/src/cli.ts audit-mobile dist
       - name: Browser smoke test of production bundle
