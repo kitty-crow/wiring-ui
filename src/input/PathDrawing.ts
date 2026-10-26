@@ -10,14 +10,7 @@ export class PathDrawing {
 
   public vertex(kind:'polyline'|'polygon',point:Point):void {
     const active=this.current;
-    if (active?.kind===kind) {
-      const previous=active.points?.at(-1);
-      if (previous && pointDistance(previous,point)<3)return;
-      active.points?.push({...point});
-      this.bounds(active);
-      this.model.changed();
-      return;
-    }
+    if (active?.kind===kind) {this.append(active,point);return;}
     this.finish();
     const shape:Shape={
       id:createId(),kind,x:point.x,y:point.y,width:0,height:0,
@@ -30,6 +23,13 @@ export class PathDrawing {
     this.model.changed();
   }
 
+  private append(active:Shape,point:Point):void {
+    const previous=active.points?.at(-1);
+    if (previous && pointDistance(previous,point)<3)return;
+    active.points?.push({...point});
+    this.bounds(active);
+    this.model.changed();
+  }
   /** Double-click or switching tools finishes a valid line; Escape discards a draft. */
   public finish():boolean {
     const shape=this.current;
