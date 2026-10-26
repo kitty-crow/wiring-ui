@@ -84,7 +84,7 @@ export class ClipboardService {
     }
     for (const note of data.annotations) { note.id = createId(); shifted(note, distance); }
     for (const symbol of data.symbols) { symbol.id = createId(); shifted(symbol, distance); }
-    for (const shape of data.shapes) { shape.id = createId(); shifted(shape, distance); }
+    for (const shape of data.shapes) { shape.id = createId(); shifted(shape, distance); shape.points?.forEach(vertex=>shifted(vertex,distance)); }
     const project = this.model.project;
     project.components.push(...data.components);
     project.anchors.push(...data.anchors);
@@ -131,6 +131,7 @@ export class ClipboardService {
     const count = components.length + anchors.length + notes.length + symbols.length + shapes.length + Number(Boolean(waypoint));
     if (count === 0) return false;
     [...components, ...anchors, ...notes, ...symbols, ...shapes].forEach(move);
+    for (const shape of shapes) shape.points?.forEach(move);
     if (waypoint) move(waypoint);
     if (selection.kind === 'all') for (const wire of project.wires) wire.points.forEach(move);
     this.model.changed();
