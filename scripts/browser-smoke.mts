@@ -46,6 +46,62 @@ try {
   if (!state.status.includes('3 blocks') || !state.status.includes('7 cables')) {
     throw new Error('Editor did not load the sample document: ' + JSON.stringify(state));
   }
+  // Use the known sample-wire geometry at the responsive canvas scale.
+  const screen = await page.evaluate(() => {
+    const area = document.querySelector('#workspace');
+    if (!(area instanceof HTMLElement)) throw new Error('Workspace missing');
+    const width = area.clientWidth;
+    const height = area.clientHeight;
+    const zoom = Math.max(0.25, Math.min(2, Math.min((width-75)/1370,(height-75)/850)));
+    const x = Math.max(20,(width-1370*zoom)/2);
+    const y = Math.max(20,(height-850*zoom)/2);
+    return {x:x+470*zoom,y:y+233*zoom};
+  });
+  await page.locator('#editor-canvas').click({ position: screen });
+  await page.getByRole('button', { name: 'Apply colour' }).waitFor({ state: 'visible' });
+  const colour = page.locator('#inspector input[type=color][data-key=color]');
+  await colour.evaluate((element: Element) => {
+    const input = element as HTMLInputElement;
+    input.value = '#ff22aa';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await page.getByRole('button', { name: 'Apply colour' }).click();
+  const firstSave = page.waitForEvent('download');
+  await page.keyboard.press('Control+s');
+  const saved = await firstSave;
+  const path = await saved.path();
+  if (!path) throw new Error('Save project did not create download');
+  const savedProject = JSON.parse(await readFile(path,'utf8')) as {wires:Array<{id:string;color:string;points:unknown[]}>};
+  if (savedProject.wires.find(item=>item.id==='wire0')?.color !== '#ff22aa')
+    throw new Error('Apply colour did not persist in downloaded project');
+  await page.locator('#editor-canvas').click({ button:'right',position:screen });
+  await page.getByRole('menuitem',{name:'Add bend here'}).click();
+  const secondSave = page.waitForEvent('download');
+  await page.keyboard.press('Control+s');
+  const bendFile = await secondSave;
+  const bendPath = await bendFile.path();
+  if (!bendPath) throw new Error('Bend-save failed');
+  const bendProject = JSON.parse(await readFile(bendPath,'utf8')) as {wires:Array<{id:string;points:unknown[]}>};
+  if ((bendProject.wires.find(item=>item.id==='wire0')?.points.length??0) < 1)
+    throw new Error('Right-click Add bend did not modify cable');
+  await page.locator('#symbol-picker').selectOption('ground');
+  await page.locator('#editor-canvas').click({ position:{x:520,y:425} });
+  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('1 symbols'));
+  await page.keyboard.press('Control+z');
+  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('0 symbols'));
+  await page.keyboard.press('Control+Shift+z');
+  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('1 symbols'));
+  await page.keyboard.press('Control+c');
+  await page.keyboard.press('Control+v');
+  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('2 symbols'));
+  await page.keyboard.press('Control+x');
+  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('1 symbols'));
+  await page.keyboard.press('Control+z');
+  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('2 symbols'));
+  await page.getByRole('button',{name:'Shortcuts'}).click();
+  await page.getByRole('dialog',{name:'Keyboard shortcuts'}).waitFor({state:'visible'});
+  await page.getByRole('button',{name:'Close'}).click();
+
   await page.getByRole('button', { name: 'Block', exact: true }).click();
   await page.locator('#editor-canvas').click({ position: { x: 230, y: 250 } });
   await page.waitForFunction(() => (document.querySelector('#status')?.textContent ?? '').includes('4 blocks'));
