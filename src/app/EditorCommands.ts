@@ -35,10 +35,10 @@ export class EditorCommands {
     if (command === 'undo' || command === 'redo') { this.restore(command); return; }
     if (command === 'copy') { this.clipboard.copy(); return; }
     if (command === 'select-all') { this.clipboard.selectAll(); return; }
-    if (command === 'cut') { if (this.clipboard.cut()) this.record(); return; }
-    if (command === 'paste') { if (this.clipboard.paste()) this.record(); return; }
-    if (command === 'duplicate') { if (this.clipboard.duplicate()) this.record(); return; }
-    if (command === 'delete') { if (this.model.selection) { this.model.removeSelected(); this.record(); } return; }
+    if (command === 'cut') { this.recordWhen(this.clipboard.cut()); return; }
+    if (command === 'paste') { this.recordWhen(this.clipboard.paste()); return; }
+    if (command === 'duplicate') { this.recordWhen(this.clipboard.duplicate()); return; }
+    if (command === 'delete') { this.removeSelection(); return; }
     if (command.startsWith('nudge-')) { this.nudge(command, event); return; }
     this.external(command);
   }
@@ -48,26 +48,8 @@ export class EditorCommands {
       this.run(action);
       return;
     }
-    if (action === 'add-terminal') {
-      const component = this.model.selection?.kind === 'component'
-        ? this.model.component(this.model.selection.id) : undefined;
-      if (component) this.model.addPin(component);
-      else this.model.addComponent(point);
-      this.record();
-      return;
-    }
-    if (action === 'disconnect-terminal') {
-      const selection = this.model.selection;
-      if (!selection) return;
-      const id = selection.id;
-      const related = this.model.project.wires.filter(item => item.from === id || item.to === id);
-      for (const wire of related) {
-        if (wire.from === id) this.model.detachEnd(wire, 'from');
-        if (wire.to === id) this.model.detachEnd(wire, 'to');
-      }
-      this.record();
-      return;
-    }
+    if (action === 'add-terminal') { this.addTerminal(point); return; }
+    if (action === 'disconnect-terminal') { this.disconnectTerminal(); return; }
     const selected = this.model.selection;
     if (!selected || (selected.kind !== 'wire' && selected.kind !== 'waypoint')) return;
     const wire = this.model.project.wires.find(item => item.id === selected.id);
@@ -76,26 +58,52 @@ export class EditorCommands {
   }
   private modifyCable(action: ContextAction, wire: Wire, point: Point): void {
     if (action === 'remove-bend') {
-      if (this.model.selection?.index !== undefined) wire.points.splice(this.model.selection.index, 1);
+      wire.points.splice(this.model.selection?.index ?? -1, 1);
       this.model.selection = { kind: 'wire', id: wire.id };
     }
-    if (action === 'add-bend') {
-      const location = this.router.nearestSegment(wire, point);
-      if (!location) return;
-      wire.points.splice(Math.min(location.index, wire.points.length), 0, location.point);
-      this.model.selection = { kind: 'wire', id: wire.id };
-    }
+    if (action === 'add-bend') this.addBend(wire, point);
     if (action === 'split-wire') this.router.split(wire, point);
     if (action === 'reset-route') wire.points = [];
     if (action === 'disconnect-start') this.model.detachEnd(wire, 'from');
     if (action === 'disconnect-end') this.model.detachEnd(wire, 'to');
     this.record();
   }
+  private recordWhen(changed: boolean): void {
+    if (changed) this.record();
+  }
+  private removeSelection(): void {
+    if (!this.model.selection) return;
+    this.model.removeSelected();this.record();
+  }
+  private addTerminal(point: Point): void {
+    const component = this.model.selection?.kind === 'component'
+      ? this.model.component(this.model.selection.id) : undefined;
+    if (component) this.model.addPin(component);
+    else this.model.addComponent(point);
+    this.record();
+  }
+  private disconnectTerminal(): void {
+    const selection = this.model.selection;
+    if (!selection) return;
+    const id = selection.id;
+    const related = this.model.project.wires.filter(item => item.from === id || item.to === id);
+    for (const wire of related) {
+      if (wire.from === id) this.model.detachEnd(wire, 'from');
+      if (wire.to === id) this.model.detachEnd(wire, 'to');
+    }
+    this.record();
+  }
+  private addBend(wire: Wire, point: Point): void {
+    const location = this.router.nearestSegment(wire, point);
+    if (!location) return;
+    wire.points.splice(Math.min(location.index, wire.points.length), 0, location.point);
+    this.model.selection = { kind: 'wire', id: wire.id };
+  }
   private nudge(command: EditorCommand, event?: KeyboardEvent): void {
     const distance = event?.altKey ? 1 : event?.shiftKey ? 20 : 10;
     const x = command === 'nudge-left' ? -distance : command === 'nudge-right' ? distance : 0;
     const y = command === 'nudge-up' ? -distance : command === 'nudge-down' ? distance : 0;
-    if (this.clipboard.nudge(x,y)) this.record();
+    this.recordWhen(this.clipboard.nudge(x,y));
   }
   private restore(direction: 'undo' | 'redo'): void {
     const snapshot = direction === 'undo' ? this.history.undo() : this.history.redo();
