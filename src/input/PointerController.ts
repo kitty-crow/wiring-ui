@@ -126,7 +126,9 @@ export class PointerController {
     if (!drag||!drag.moved) return;
     const {world}=this.pos(event);const target=this.tester.at(world,12/this.renderer.zoom,drag.hit?.id);
     const hit=drag.hit;
-    if (hit?.kind==='anchor' && (target?.kind==='pin'||target?.kind==='anchor') && hit.id!==target.id)this.reattach(hit.id,target.id);
+    if (hit?.kind==='anchor' && target?.kind==='segment') this.connectOnCable(hit.id,target.id,world);
+    if (hit?.kind==='anchor' && (target?.kind==='pin'||target?.kind==='anchor') && hit.id!==target.id)
+      this.model.connectAnchor(hit.id,target.id);
     this.commit();
   }
   private pullPin(hit:Hit,drag:Drag):Hit {
@@ -144,14 +146,15 @@ export class PointerController {
     const point=wire.points[index];if(!point)return;
     point.x+=dx;point.y+=dy;
   }
-  private reattach(from:string,to:string):void {
-    for (const wire of this.model.project.wires) {
-      if(wire.from===from)wire.from=to;
-      if(wire.to===from)wire.to=to;
-    }
-    this.model.project.anchors=this.model.project.anchors.filter(anchor=>anchor.id!==from);
-    const node=this.model.project.anchors.find(anchor=>anchor.id===to);
-    if (node) node.kind='junction';
+  /** A dropped loose end creates an explicit junction on a different cable. */
+  private connectOnCable(sourceId:string,wireId:string,point:Point):void {
+    const wire=this.model.project.wires.find(item=>item.id===wireId);
+    if (!wire || wire.from===sourceId || wire.to===sourceId)return;
+    const nearest=this.router.nearestSegment(wire,point);
+    if (!nearest || nearest.distance>12/this.renderer.zoom)return;
+    const junction=this.router.split(wire,nearest.point);
+    if (!junction)return;
+    this.model.connectAnchor(sourceId,junction);
   }
   private doubleClick(event:MouseEvent):void {
     const world=this.pos(event).world;const hit=this.tester.at(world,12/this.renderer.zoom);
