@@ -52,7 +52,8 @@ export class ShortcutController {
   private handle(event: KeyboardEvent): void {
     if (event.defaultPrevented || event.isComposing) return;
     const target = event.target;
-    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+    if (target instanceof HTMLSelectElement && !event.ctrlKey && !event.metaKey) return;
     if (target instanceof HTMLElement && target.isContentEditable) return;
     const command = ShortcutController.resolve(event);
     if (!command) return;
