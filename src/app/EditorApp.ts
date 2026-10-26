@@ -82,7 +82,7 @@ export class EditorApp {
     try{const state=await this.store.load();if(state){this.model.set(this.codec.parse(this.codec.encode(state)));this.commands.reset();this.fit();}}catch(error){this.alert('Could not restore last project: '+String(error));}
   }
   private setupToolbar():void {
-    const tools=['select','pan','wire','component','text','rectangle','ellipse','line','symbol','junction'] as Tool[];
+    const tools=['select','pan','wire','component','text','rectangle','ellipse','line','polyline','polygon','symbol','junction'] as Tool[];
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-tool]')) {
       button.addEventListener('click',()=>{
         const tool=button.dataset.tool as Tool;
