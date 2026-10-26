@@ -17,7 +17,7 @@ export class ShortcutHelp {
       '<dt>Open / New / Print</dt><dd>Ctrl/Cmd+O / N / P</dd>',
       '<dt>Nudge selected item</dt><dd>Arrow keys (10 units), Shift+Arrow (20), Alt+Arrow (1)</dd>',
       '<dt>Drawing tools</dt><dd>V Select, H Pan, W Cable, B Block, J Junction, T Text, S Symbol</dd>',
-      '<dt>Shapes / Grid / Fit</dt><dd>R Rectangle, E Ellipse, L Line, G Grid, F Fit</dd>',
+      '<dt>Shapes / Grid / Fit</dt><dd>R Rectangle, E Ellipse, L Line, P Polygon, Q Polyline, G Grid, F Fit</dd>',
       '<dt>Context menu</dt><dd>Right-click a cable, bend, terminal or block; Shift+F10</dd>',
       '<dt>Shortcut macro</dt><dd>Ctrl/Cmd+Alt+R record/stop, Ctrl/Cmd+Alt+P replay</dd>',
       '<dt>Help</dt><dd>?</dd>',
