@@ -26,10 +26,11 @@ const tokens = [
 for (const token of tokens) {
   if (!template.includes(token)) throw new Error('Missing template marker: ' + token);
 }
+// Callback replacements avoid `$&` and `$'` substitution in bundled JavaScript.
 const html = template
-  .replace('__INLINE_STYLES__', css.replaceAll('</style', '<\\/style'))
-  .replace('__INLINE_PDF_WORKER__', pdfWorker.replaceAll('</script', '<\\/script'))
-  .replace('__INLINE_JAVASCRIPT__', javascript.replaceAll('</script', '<\\/script'));
+  .replace('__INLINE_STYLES__', () => css.replaceAll('</style', '<\\/style'))
+  .replace('__INLINE_PDF_WORKER__', () => pdfWorker.replaceAll('</script', '<\\/script'))
+  .replace('__INLINE_JAVASCRIPT__', () => javascript.replaceAll('</script', '<\\/script'));
 for (const token of tokens) {
   if (html.includes(token)) throw new Error('Unreplaced template marker: ' + token);
 }
