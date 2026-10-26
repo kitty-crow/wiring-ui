@@ -36,33 +36,46 @@ export class WireRouter {
     const points = this.path(wire);
     return points.slice(1).map((b, index) => ({ a: points[index] ?? b, b }));
   }
-  /** Crossing topology is determined by shared anchor IDs, not visual proximity. */
+  /** Route every conductor once per crossover pass, rather than once per pair. */
   public crossings(): Crossing[] {
-    const found: Crossing[] = [];
-    const wires = this.model.project.wires;
-    for (let index = 0; index < wires.length; index++) {
-      const current = wires[index];
-      if (!current) continue;
-      const segments = this.segments(current);
-      for (let otherIndex = 0; otherIndex < wires.length; otherIndex++) {
-        const other = wires[otherIndex];
-        if (!other || current.id === other.id) continue;
-        if ([current.from, current.to].some(id => id === other.from || id === other.to)) continue;
-        const otherSegments = this.segments(other);
-        for (let part = 0; part < segments.length; part++) {
-          const horizontal = segments[part];
-          if (!horizontal || Math.abs(horizontal.a.y - horizontal.b.y) > 0.01) continue;
-          for (const vertical of otherSegments) {
-            if (Math.abs(vertical.a.x - vertical.b.x) > 0.01) continue;
-            const x = vertical.a.x; const y = horizontal.a.y;
-            const insideH = x > Math.min(horizontal.a.x, horizontal.b.x) + 13 && x < Math.max(horizontal.a.x, horizontal.b.x) - 13;
-            const insideV = y > Math.min(vertical.a.y, vertical.b.y) + 10 && y < Math.max(vertical.a.y, vertical.b.y) - 10;
-            if (insideH && insideV) found.push({ x, y, wireId: current.id, verticalWireId: other.id, segment: part, direction: Math.sign(horizontal.b.x-horizontal.a.x) || 1 });
-          }
-        }
+    const drawn=this.model.project.wires.map(wire=>({wire,legs:this.segments(wire)}));
+    const found:Crossing[]=[];
+    for (let i=0;i<drawn.length;i++) {
+      const a=drawn[i];
+      if (!a) continue;
+      for (let j=i+1;j<drawn.length;j++) {
+        const b=drawn[j];
+        if (!b) continue;
+        const shared=[a.wire.from,a.wire.to]
+          .some(id=>id===b.wire.from||id===b.wire.to);
+        if (shared) continue;
+        this.detectCrossings(a.wire,a.legs,b.wire,b.legs,found);
+        this.detectCrossings(b.wire,b.legs,a.wire,a.legs,found);
       }
     }
     return found;
+  }
+
+  private detectCrossings(
+    upper:Wire,horizontalLegs:readonly Segment[],
+    lower:Wire,verticalLegs:readonly Segment[],found:Crossing[]
+  ):void {
+    for (const [index,horizontal] of horizontalLegs.entries()) {
+      if (Math.abs(horizontal.a.y-horizontal.b.y)>.01)continue;
+      for (const vertical of verticalLegs) {
+        if (Math.abs(vertical.a.x-vertical.b.x)>.01)continue;
+        const point=OrthogonalGeometry.intersection(horizontal,vertical);
+        if (!point)continue;
+        // Keep room for the two shoulders of a printed U-shaped bridge.
+        const insideH=point.x>Math.min(horizontal.a.x,horizontal.b.x)+13 &&
+          point.x<Math.max(horizontal.a.x,horizontal.b.x)-13;
+        const insideV=point.y>Math.min(vertical.a.y,vertical.b.y)+10 &&
+          point.y<Math.max(vertical.a.y,vertical.b.y)-10;
+        if (!insideH||!insideV)continue;
+        found.push({x:point.x,y:point.y,wireId:upper.id,verticalWireId:lower.id,
+          segment:index,direction:Math.sign(horizontal.b.x-horizontal.a.x)||1});
+      }
+    }
   }
   public nearestSegment(wire: Wire, point: Point): { point: Point; distance: number; index: number } | null {
     let result: { point: Point; distance: number; index: number } | null = null;
