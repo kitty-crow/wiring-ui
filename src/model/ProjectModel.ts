@@ -67,18 +67,22 @@ export class ProjectModel {
     if (selected.kind === 'annotation') this.state.annotations = this.state.annotations.filter(item => item.id !== id);
     if (selected.kind === 'shape') this.state.shapes = this.state.shapes.filter(item => item.id !== id);
     if (selected.kind === 'symbol') this.state.symbols = this.state.symbols.filter(item => item.id !== id);
-    const anchor = selected.kind === 'anchor' ? this.state.anchors.find(item => item.id === id) : undefined;
-    if (anchor) {
-      for (const wire of this.state.wires) {
-        for (const end of ['from', 'to'] as const) {
-          if (wire[end] !== id) continue;
-          const loose = this.createAnchor(anchor, 'free');
-          wire[end] = loose.id;
-        }
-      }
-      this.state.anchors = this.state.anchors.filter(item => item.id !== id);
-    }
+    if (selected.kind === 'anchor') this.disconnectAnchor(id);
     this.selection = null; this.changed();
+  }
+  /** Preserve each incident cable as a separate free end after junction deletion. */
+  public disconnectAnchor(id: string): void {
+    const anchor = this.state.anchors.find(item => item.id === id);
+    if (!anchor) return;
+    for (const wire of this.state.wires) {
+      for (const end of ['from', 'to'] as const) {
+        if (wire[end] !== id) continue;
+        const loose = this.createAnchor(anchor, 'free');
+        wire[end] = loose.id;
+      }
+    }
+    this.state.anchors = this.state.anchors.filter(item => item.id !== id);
+    this.changed();
   }
   public addPin(component: Component): Pin {
     const pin: Pin = { id: createId(), number: String(component.pins.length + 1), label: 'Signal', side: 'right' };
