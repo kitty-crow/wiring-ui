@@ -62,7 +62,8 @@ test('splitting a straight route keeps both branches on their original conductor
   }
   if (!node) throw new Error('junction not created');
   model.disconnectAnchor(node);
-  const free=model.project.wires.filter(w=>w.from!==a.id&&w.to!==b.id)
-    .flatMap(w=>[w.from,w.to].filter(id=>model.project.anchors.some(v=>v.id===id&&v.kind==='free')));
-  expect(new Set(free).size).toBeGreaterThanOrEqual(2);
+  const free=branches.flatMap(w=>[w.from,w.to]
+    .filter(id=>model.project.anchors.some(v=>v.id===id&&v.kind==='free')));
+  expect(new Set(free).size).toBe(2);
+  expect(model.project.wires.every(w=>model.anchor(w.from)&&model.anchor(w.to))).toBe(true);
 });
