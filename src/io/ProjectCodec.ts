@@ -7,7 +7,7 @@ const point=(value:unknown):value is Point=>object(value)&&num(value.x)&&num(val
 const inList=<T extends string>(value:unknown,values:readonly T[]):value is T=>typeof value==='string'&&values.includes(value as T);
 const dash=(value:unknown):value is Dash=>inList(value,['solid','dash','dot','dashdot']);
 const side=(value:unknown):value is PinSide=>inList(value,['left','right']);
-const shapeKind=(value:unknown):value is ShapeKind=>inList(value,['rectangle','ellipse','line']);
+const shapeKind=(value:unknown):value is ShapeKind=>inList(value,['rectangle','ellipse','line','polyline','polygon']);
 const symbolKind=(value:unknown):value is SymbolKind=>inList(value,['ground','vcc','vdd','vss','nc','resistor','capacitor','inductor','diode','led','fuse','switch','testpoint']);
 const all=(value:unknown,check:(value:unknown)=>boolean):boolean=>Array.isArray(value)&&value.length<=10000&&value.every(check);
 const pin=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.number,100)&&str(value.label,300)&&side(value.side);
@@ -15,7 +15,7 @@ const component=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(v
 const anchor=(value:unknown):boolean=>object(value)&&str(value.id,120)&&num(value.x)&&num(value.y)&&inList(value.kind,['free','junction']);
 const wire=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.from,120)&&str(value.to,120)&&all(value.points,point)&&str(value.color,120)&&dash(value.dash)&&num(value.width)&&str(value.label,400);
 const annotation=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.text,20000)&&num(value.x)&&num(value.y)&&num(value.size)&&str(value.font,100)&&str(value.color,120)&&typeof value.bold==='boolean';
-const shape=(value:unknown):boolean=>object(value)&&str(value.id,120)&&shapeKind(value.kind)&&num(value.x)&&num(value.y)&&num(value.width)&&num(value.height)&&str(value.color,120)&&str(value.fill,120)&&num(value.stroke)&&dash(value.dash);
+const shape=(value:unknown):boolean=>object(value)&&str(value.id,120)&&shapeKind(value.kind)&&num(value.x)&&num(value.y)&&num(value.width)&&num(value.height)&&str(value.color,120)&&str(value.fill,120)&&num(value.stroke)&&dash(value.dash)&&(value.points===undefined||all(value.points,point));
 const symbol=(value:unknown):boolean=>object(value)&&str(value.id,120)&&symbolKind(value.kind)&&num(value.x)&&num(value.y)&&num(value.scale)&&num(value.rotation)&&str(value.color,120)&&str(value.label,400);
 const background=(value:unknown):boolean=>value===null||(object(value)&&str(value.data,30_000_000)&&value.data.startsWith('data:image/')&&num(value.opacity)&&num(value.x)&&num(value.y)&&num(value.width)&&num(value.height));
 
