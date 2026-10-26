@@ -14,27 +14,25 @@ export class ShortcutController {
   public static resolve(event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'>): EditorCommand | null {
     const key = event.key.toLowerCase();
     const mod = event.ctrlKey || event.metaKey;
-    if (mod && event.altKey) {
-      if (key === 'r') return 'macro-toggle';
-      if (key === 'p') return 'macro-play';
-      return null;
-    }
+    if (mod && event.altKey) return key === 'r' ? 'macro-toggle' : key === 'p' ? 'macro-play' : null;
     if (mod) {
-      if (key === 'z') return event.shiftKey ? 'redo' : 'undo';
-      if (key === 'y' && !event.shiftKey) return 'redo';
-      if (key === 'c' && !event.shiftKey) return 'copy';
-      if (key === 'x' && !event.shiftKey) return 'cut';
-      if (key === 'v' && !event.shiftKey) return 'paste';
-      if (key === 'd' && !event.shiftKey) return 'duplicate';
-      if (key === 'a' && !event.shiftKey) return 'select-all';
-      if (key === 's') return event.shiftKey ? 'save-as' : 'save';
-      if (key === 'o' && !event.shiftKey) return 'open';
-      if (key === 'n' && !event.shiftKey) return 'new';
-      if (key === 'p' && !event.shiftKey) return 'print';
-      if (key === '0' && !event.shiftKey) return 'fit';
-      return null;
+      switch (key) {
+        case 'z': return event.shiftKey ? 'redo' : 'undo';
+        case 'y': return event.shiftKey ? null : 'redo';
+        case 'c': return event.shiftKey ? null : 'copy';
+        case 'x': return event.shiftKey ? null : 'cut';
+        case 'v': return event.shiftKey ? null : 'paste';
+        case 'd': return event.shiftKey ? null : 'duplicate';
+        case 'a': return event.shiftKey ? null : 'select-all';
+        case 's': return event.shiftKey ? 'save-as' : 'save';
+        case 'o': return event.shiftKey ? null : 'open';
+        case 'n': return event.shiftKey ? null : 'new';
+        case 'p': return event.shiftKey ? null : 'print';
+        case '0': return event.shiftKey ? null : 'fit';
+        default: return null;
+      }
     }
-    if (event.altKey) return null;
+    if (event.altKey && !key.startsWith('arrow')) return null;
     if (key === 'escape') return 'escape';
     if (key === 'delete' || key === 'backspace') return 'delete';
     if (key === 'arrowup') return 'nudge-up';
