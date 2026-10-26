@@ -91,17 +91,20 @@ export class Inspector {
     if (selected.kind==='symbol')return this.model.project.symbols.find(item=>item.id===selected.id)??null;
     return this.model.project.shapes.find(item=>item.id===selected.id)??null;
   }
+  private applyColour():void {
+    const input=this.root.querySelector<HTMLInputElement>('input[type="color"][data-key="color"]');
+    const entity=this.entity(this.model.selection);
+    if(!input||!entity||!('color' in entity))return;
+    Object.assign(entity,{color:input.value});
+    this.model.changed();
+  }
   private handleClick(event:MouseEvent):void {
     const target=event.target;
     if (!(target instanceof HTMLElement))return;
     const remove=target.dataset.removePin;
     if (remove){this.removePin(remove);return;}
     const action=target.dataset.action;
-    if(action==='apply-colour'){
-      const input=this.root.querySelector<HTMLInputElement>('input[type="color"][data-key="color"]');
-      const entity=this.entity(this.model.selection);
-      if(input&&entity&&'color' in entity)Object.assign(entity,{color:input.value});
-    }
+    if(action==='apply-colour')this.applyColour();
     if(action==='delete')this.model.removeSelected();
     if(action==='duplicate')this.model.duplicateSelected();
     if(action==='add-pin')this.addSelectedPin();
