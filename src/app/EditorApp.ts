@@ -9,6 +9,10 @@ import { ProjectCodec } from '../io/ProjectCodec';
 import { PdfTemplate } from '../io/PdfTemplate';
 import { createId, componentHeight } from '../model/types';
 import { SymbolLibrary } from '../symbols/SymbolLibrary';
+import { EditorCommands } from './EditorCommands';
+import { ShortcutController, type EditorCommand } from '../input/ShortcutController';
+import { ContextMenuController } from '../ui/ContextMenuController';
+import { ShortcutHelp } from '../ui/ShortcutHelp';
 
 const byId = <T extends HTMLElement>(id:string):T => {
   const result=document.getElementById(id);
@@ -26,6 +30,8 @@ export class EditorApp {
   private readonly renderer: CanvasRenderer;
   private readonly pointer: PointerController;
   private readonly inspector: Inspector;
+  private readonly commands: EditorCommands;
+  private readonly help = new ShortcutHelp();
   private saveSerial=0;
   private inspectorSelection='';
   private hoveredComponentId:string|null=null;
@@ -41,12 +47,15 @@ export class EditorApp {
       try {seed=this.codec.parse(embedded);}catch(error){console.warn('Invalid embedded project',error);}
     }
     this.model=new ProjectModel(seed,()=>this.updated());
+    this.commands=new EditorCommands(this.model,()=>this.updated(),()=>this.scheduleSave(),command=>this.externalCommand(command),message=>this.alert(message));
     const canvas=byId<HTMLCanvasElement>('editor-canvas');
     this.renderer=new CanvasRenderer(canvas,byId<HTMLCanvasElement>('grid-canvas'),this.model);
     this.renderer.dark=this.settings.theme==='dark';this.renderer.grid=this.settings.grid;
     this.pointer=new PointerController(canvas,this.model,this.renderer,()=>this.commit());
     this.pointer.snap=this.settings.snap;
     this.inspector=new Inspector(byId('inspector'),this.model,()=>this.commit());
+    new ShortcutController((name,event)=>this.commands.run(name,event));
+    new ContextMenuController(canvas,this.model,this.renderer,(action,point)=>this.commands.menu(action,point));
     this.setupToolbar();this.setupInputs();this.setupResize();this.applySettings();
     this.renderer.resize();this.fit();this.inspector.render();
     if (!embedded)this.restore();
@@ -58,15 +67,18 @@ export class EditorApp {
     if (key!==this.inspectorSelection){this.inspector.render();this.inspectorSelection=key;}
     const name=byId<HTMLElement>('document-name');
     name.textContent=this.model.project.name;
-    this.status.textContent=this.model.project.components.length+' blocks · '+this.model.project.wires.length+' cables · '+this.renderer.backend;
+    this.status.textContent=this.model.project.components.length+' blocks · '+this.model.project.wires.length+' cables · '+this.model.project.symbols.length+' symbols · '+this.renderer.backend;
   }
-  private commit():void {
-    this.updated();this.inspector.render();
+  private commit():void { this.commands.record(); }
+  private scheduleSave():void {
     const serial=++this.saveSerial;
-    queueMicrotask(()=>{if (serial!==this.saveSerial)return;void this.store.save(this.model.project).catch(error=>this.alert('Auto-save unavailable: '+String(error)));});
+    queueMicrotask(()=>{
+      if (serial!==this.saveSerial)return;
+      void this.store.save(this.model.project).catch(error=>this.alert('Auto-save unavailable: '+String(error)));
+    });
   }
   private async restore():Promise<void>{
-    try{const state=await this.store.load();if(state){this.model.set(this.codec.parse(this.codec.encode(state)));this.fit();}}catch(error){this.alert('Could not restore last project: '+String(error));}
+    try{const state=await this.store.load();if(state){this.model.set(this.codec.parse(this.codec.encode(state)));this.commands.reset();this.fit();}}catch(error){this.alert('Could not restore last project: '+String(error));}
   }
   private setupToolbar():void {
     const tools=['select','pan','wire','component','text','rectangle','ellipse','line','symbol','junction'] as Tool[];
@@ -126,8 +138,18 @@ export class EditorApp {
     this.renderer.offset={x:Math.max(20,(rect.width-this.model.project.width*this.renderer.zoom)/2),y:Math.max(20,(rect.height-this.model.project.height*this.renderer.zoom)/2)};
     this.renderer.invalidate();
   }
+  private externalCommand(name:EditorCommand):void {
+    if(name==='shortcuts'){this.help.show();return;}
+    if(name==='escape'){this.pointer.cancelPending();this.model.selection=null;this.model.changed();return;}
+    if(name.startsWith('tool-')){this.selectTool(name.slice(5) as Tool);return;}
+    if(name==='grid'){byId<HTMLInputElement>('grid').click();return;}
+    this.command(name);
+  }
   private command(name:string):void {
-    if (name==='new') {this.model.set(new DemoProject().create());this.fit();this.commit();}
+    if(['undo','redo','copy','cut','paste','duplicate','delete','select-all','shortcuts'].includes(name)){
+      this.commands.run(name as EditorCommand);return;
+    }
+    if (name==='new') {this.model.set(new DemoProject().create());this.commands.reset();this.fit();this.scheduleSave();}
     if (name==='open')this.pageFile.click();
     if (name==='pdf')this.templateFile.click();
     if (name==='fit')this.fit();
@@ -145,7 +167,7 @@ export class EditorApp {
     try{
       const raw=await file.text();
       const project=file.name.toLowerCase().endsWith('.html')?this.codec.parseHtml(raw):this.codec.parse(raw);
-      this.model.set(project);this.fit();this.commit();this.alert('Project loaded: '+project.name);
+      this.model.set(project);this.commands.reset();this.fit();this.scheduleSave();this.alert('Project loaded: '+project.name);
     }catch(error){this.alert('Cannot open project: '+String(error));}
     this.pageFile.value='';
   }
