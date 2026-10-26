@@ -23,7 +23,6 @@ export class PointerController {
     canvas.addEventListener('pointercancel',()=>this.cancel());
     canvas.addEventListener('dblclick',event=>this.doubleClick(event));
     canvas.addEventListener('wheel',event=>this.wheel(event),{passive:false});
-    window.addEventListener('keydown',event=>this.key(event));
   }
   public setTool(next: Tool): void {this.tool=next;this.pending=null;this.renderer.invalidate();}
   private pos(event: PointerEvent | MouseEvent | WheelEvent): { screen: Point; world: Point } {
@@ -42,7 +41,12 @@ export class PointerController {
     if (this.tool==='junction') {this.joinAt(world,hit);this.drag=null;return;}
     if (this.tool==='component') {this.model.addComponent(this.grid(world));this.commit();this.drag=null;return;}
     if (this.tool==='text') {this.model.project.annotations.push({id:createId(),text:'Annotation',...this.grid(world),size:16,font:'Arial',color:'#182638',bold:false});this.commit();this.drag=null;return;}
-    if (this.tool==='symbol') {this.model.project.symbols.push({id:createId(),kind:this.symbol,...this.grid(world),scale:1,rotation:0,color:'#162638',label:''});this.commit();this.drag=null;return;}
+    if (this.tool==='symbol') {
+      const item={id:createId(),kind:this.symbol,...this.grid(world),scale:1,rotation:0,color:this.renderer.dark?'#e1e9f2':'#162638',label:''};
+      this.model.project.symbols.push(item);
+      this.model.selection={kind:'symbol',id:item.id};
+      this.model.changed();this.commit();this.drag=null;return;
+    }
     if (this.tool==='rectangle'||this.tool==='ellipse'||this.tool==='line') {this.startShape(world,this.tool);return;}
     const wire=hit?.kind==='segment'?this.model.project.wires.find(item=>item.id===hit.id):undefined;
     if (wire&&this.drag)this.drag.originalRoute=this.router.path(wire);
@@ -158,10 +162,6 @@ export class PointerController {
     this.model.selection={kind:'waypoint',id:wire.id,index:nearest.index};this.commit();
   }
   private wheel(event:WheelEvent):void {event.preventDefault();const screen=this.pos(event).screen;this.renderer.zoomAt(event.deltaY<0?1.12:1/1.12,screen);}
-  private key(event:KeyboardEvent):void {
-    if (event.target instanceof HTMLInputElement||event.target instanceof HTMLTextAreaElement||event.target instanceof HTMLSelectElement) return;
-    if (event.key==='Escape') {this.cancel();this.model.selection=null;this.model.changed();}
-    if (event.key==='Delete'||event.key==='Backspace') {this.model.removeSelected();this.commit();}
-  }
-  private cancel():void {this.pending=null;this.drag=null;this.renderer.invalidate();}
+  public cancelPending():void {this.pending=null;this.drag=null;this.renderer.invalidate();}
+  private cancel():void {this.cancelPending();}
 }
