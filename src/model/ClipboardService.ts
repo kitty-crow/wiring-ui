@@ -101,7 +101,7 @@ export class ClipboardService {
       ...data.anchors.map(item => ({kind: 'anchor' as const, id: item.id}))
     ];
     const first = candidates[0];
-    this.model.selection = candidates.length > 1 ? { kind: 'all', id: '*' } : first ?? null;
+    this.model.selection = first ?? null;
     this.model.changed();
     return true;
   }
