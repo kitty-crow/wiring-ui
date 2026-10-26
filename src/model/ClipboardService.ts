@@ -1,4 +1,4 @@
-import { createId, type Annotation, type Component, type FreeAnchor, type Point, type Project, type Selection, type Shape, type SymbolInstance, type Wire } from './types';
+import { createId, type FreeAnchor, type Point, type Project, type Selection } from './types';
 import { ProjectModel } from './ProjectModel';
 
 type Items = Pick<Project, 'components' | 'anchors' | 'wires' | 'annotations' | 'shapes' | 'symbols'>;
