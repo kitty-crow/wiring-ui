@@ -1,12 +1,14 @@
 import { createId, pointDistance, type Point, type Wire } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
 import { OrthogonalGeometry } from './OrthogonalGeometry';
+import { ObstacleRouter } from './ObstacleRouter';
 export interface Segment { a: Point; b: Point }
 export interface Crossing { x: number; y: number; wireId: string; verticalWireId: string; segment: number; direction: number }
 
 /** Orthogonal routing with anchored endpoints and user-controlled waypoints. */
 export class WireRouter {
-  public constructor(private readonly model: ProjectModel) {}
+  private readonly obstacles:ObstacleRouter;
+  public constructor(private readonly model: ProjectModel) {this.obstacles=new ObstacleRouter(model);}
   public path(wire: Wire): Point[] {
     const start = this.model.anchor(wire.from);
     const end = this.model.anchor(wire.to);
@@ -15,7 +17,8 @@ export class WireRouter {
       // Allocate each cable a stable lane to avoid visually coincident trunks.
       const position=this.model.project.wires.findIndex(item=>item.id===wire.id);
       const lane=(start.x+end.x)/2 + ((Math.max(position,0)%9)-4)*19;
-      return this.compact([start, { x: lane, y: start.y }, { x: lane, y: end.y }, end]);
+      const preferred=this.compact([start, { x: lane, y: start.y }, { x: lane, y: end.y }, end]);
+      return this.obstacles.route(wire,preferred);
     }
     const output = [start];
     let cursor = start;
