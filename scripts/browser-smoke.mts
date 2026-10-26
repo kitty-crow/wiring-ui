@@ -84,9 +84,12 @@ try {
   const bendProject = JSON.parse(await readFile(bendPath,'utf8')) as {wires:Array<{id:string;points:unknown[]}>};
   if ((bendProject.wires.find(item=>item.id==='wire0')?.points.length??0) < 1)
     throw new Error('Right-click Add bend did not modify cable');
+  await page.locator('#symbol-picker').focus();
   await page.locator('#symbol-picker').selectOption('ground');
+  console.log('Symbol picker focused with default symbol');
   await page.locator('#editor-canvas').click({ position:{x:520,y:425} });
   await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('1 symbols'));
+  console.log('Symbol placement confirmed');
   await page.keyboard.press('Control+z');
   await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('0 symbols'));
   await page.keyboard.press('Control+Shift+z');
@@ -94,6 +97,7 @@ try {
   await page.keyboard.press('Control+c');
   await page.keyboard.press('Control+v');
   await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('2 symbols'));
+  console.log('Symbol clipboard confirmed');
   await page.keyboard.press('Control+x');
   await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('1 symbols'));
   await page.keyboard.press('Control+z');
