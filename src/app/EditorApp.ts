@@ -31,6 +31,7 @@ export class EditorApp {
   private readonly pointer: PointerController;
   private readonly inspector: Inspector;
   private readonly commands: EditorCommands;
+  private readonly menu: ContextMenuController;
   private readonly help = new ShortcutHelp();
   private saveSerial=0;
   private inspectorSelection='';
@@ -55,7 +56,7 @@ export class EditorApp {
     this.pointer.snap=this.settings.snap;
     this.inspector=new Inspector(byId('inspector'),this.model,()=>this.commit());
     new ShortcutController((name,event)=>this.commands.run(name,event));
-    new ContextMenuController(canvas,this.model,this.renderer,(action,point)=>this.commands.menu(action,point));
+    this.menu=new ContextMenuController(canvas,this.model,this.renderer,(action,point)=>this.commands.menu(action,point));
     this.setupToolbar();this.setupInputs();this.setupResize();this.applySettings();
     this.renderer.resize();this.fit();this.inspector.render();
     if (!embedded)this.restore();
@@ -140,6 +141,7 @@ export class EditorApp {
   }
   private externalCommand(name:EditorCommand):void {
     if(name==='shortcuts'){this.help.show();return;}
+    if(name==='context-menu'){this.menu.showSelection();return;}
     if(name==='escape'){this.pointer.cancelPending();this.model.selection=null;this.model.changed();return;}
     if(name.startsWith('tool-')){this.selectTool(name.slice(5) as Tool);return;}
     if(name==='grid'){byId<HTMLInputElement>('grid').click();return;}
@@ -154,7 +156,8 @@ export class EditorApp {
     if (name==='pdf')this.templateFile.click();
     if (name==='fit')this.fit();
     if (name==='html')this.codec.exportHtml(this.model.project);
-    if (name==='json')this.codec.download(this.codec.encode(this.model.project),this.model.project.name.replace(/[^\w-]+/g,'_')+'.wiring.json','application/json');
+    if (name==='json'||name==='save')this.codec.download(this.codec.encode(this.model.project),this.model.project.name.replace(/[^\w-]+/g,'_')+'.wiring.json','application/json');
+    if (name==='save-as')this.codec.exportHtml(this.model.project);
     if (name==='png')this.exportPng();
     if (name==='add-component')this.model.addComponent({x:200,y:200});
     if (name==='remove-template'){this.model.project.background=null;this.commit();}
