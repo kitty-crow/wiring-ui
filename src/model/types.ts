@@ -15,7 +15,7 @@ export interface SymbolInstance extends Point { id: string; kind: SymbolKind; sc
 /** Embedded rasterised PDF or supplied image. No external resource URLs required. */
 export interface Background { data: string; opacity: number; x: number; y: number; width: number; height: number }
 export interface Project { version: 1; name: string; width: number; height: number; components: Component[]; anchors: FreeAnchor[]; wires: Wire[]; annotations: Annotation[]; shapes: Shape[]; symbols: SymbolInstance[]; background: Background | null }
-export type Selection = { kind: 'component' | 'wire' | 'annotation' | 'shape' | 'waypoint' | 'anchor' | 'symbol'; id: string; index?: number } | null;
+export type Selection = { kind: 'component' | 'wire' | 'annotation' | 'shape' | 'waypoint' | 'anchor' | 'symbol' | 'all'; id: string; index?: number } | null;
 export const createId = (): string => {
   const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
   return 'w'+Array.from(bytes,byte=>byte.toString(16).padStart(2,'0')).join('');
