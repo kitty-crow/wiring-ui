@@ -108,16 +108,17 @@ export class CanvasRenderer {
     if (shape.kind === 'ellipse') ctx.ellipse(shape.x+shape.width/2,shape.y+shape.height/2,Math.abs(shape.width/2),Math.abs(shape.height/2),0,0,Math.PI*2);
     if (shape.kind === 'rectangle') ctx.rect(shape.x,shape.y,shape.width,shape.height);
     if (shape.kind === 'line') { ctx.moveTo(shape.x,shape.y);ctx.lineTo(shape.x+shape.width,shape.y+shape.height); }
-    if (shape.kind === 'polyline'||shape.kind === 'polygon') {
-      const first=shape.points?.[0];
-      if (first) ctx.moveTo(first.x,first.y);
-      for (const vertex of shape.points?.slice(1)??[])ctx.lineTo(vertex.x,vertex.y);
-      if (shape.kind==='polygon')ctx.closePath();
-    }
+    if (shape.kind === 'polyline'||shape.kind === 'polygon') this.drawVertexPath(ctx,shape);
     if (shape.fill !== 'transparent' && shape.kind !== 'line' && shape.kind!=='polyline') ctx.fill();
     ctx.stroke();
     if (this.model.selection?.id === shape.id) { ctx.setLineDash([4,3]);ctx.strokeStyle = '#2563eb';ctx.strokeRect(shape.x-4,shape.y-4,shape.width+8,shape.height+8); }
     ctx.restore();
+  }
+  private drawVertexPath(ctx:CanvasRenderingContext2D,shape:Shape):void {
+    const first=shape.points?.[0];
+    if (first)ctx.moveTo(first.x,first.y);
+    for(const vertex of shape.points?.slice(1)??[])ctx.lineTo(vertex.x,vertex.y);
+    if (shape.kind==='polygon')ctx.closePath();
   }
   private applyDash(ctx: CanvasRenderingContext2D, dash: string): void {
     ctx.setLineDash(dash === 'dash' ? [9,6] : dash === 'dot' ? [2,6] : dash === 'dashdot' ? [12,4,2,4] : []);
