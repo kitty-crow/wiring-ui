@@ -28,7 +28,7 @@ export class ClipboardService {
     if (selected.kind === 'anchor') items.anchors = structuredClone(project.anchors.filter(item => item.id === selected.id));
     if (selected.kind === 'wire' || selected.kind === 'waypoint')
       items.wires = structuredClone(project.wires.filter(item => item.id === selected.id));
-    for (const wire of items.wires) {
+    for (const wire of selected.kind === 'all' ? [] : items.wires) {
         for (const endpoint of ['from', 'to'] as const) {
           const point = this.model.anchor(wire[endpoint]);
           if (!point) continue;
