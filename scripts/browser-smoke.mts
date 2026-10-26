@@ -90,8 +90,10 @@ try {
   await page.locator('#editor-canvas').click({ position:{x:520,y:425} });
   await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('1 symbols'));
   console.log('Symbol placement confirmed');
+  console.log('Focus before undo:',await page.evaluate(()=>document.activeElement?.tagName));
   await page.keyboard.press('Control+z');
-  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('0 symbols'));
+  console.log('Undo status:',await page.locator('#status').textContent());
+  await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('0 symbols'),null,{timeout:8000});
   await page.keyboard.press('Control+Shift+z');
   await page.waitForFunction(()=>(document.querySelector('#status')?.textContent??'').includes('1 symbols'));
   await page.keyboard.press('Control+c');
