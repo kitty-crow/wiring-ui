@@ -3,7 +3,8 @@ import { HitTester, type Hit } from './HitTester';
 import { createId, type Point, type Wire, type SymbolKind, type ShapeKind } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
 import { CanvasRenderer } from '../render/CanvasRenderer';
-export type Tool = 'select' | 'pan' | 'wire' | 'component' | 'text' | 'rectangle' | 'ellipse' | 'line' | 'symbol' | 'junction';
+import { PathDrawing } from './PathDrawing';
+export type Tool = 'select' | 'pan' | 'wire' | 'component' | 'text' | 'rectangle' | 'ellipse' | 'line' | 'polyline' | 'polygon' | 'symbol' | 'junction';
 type Drag = { hit: Hit | null; start: Point; prior: Point; screen: Point; moved: boolean; originalRoute: Point[] };
 
 /** Pointer input: moving components never modifies endpoint IDs; wire routes follow them. */
@@ -13,10 +14,12 @@ export class PointerController {
   public snap = true;
   private readonly tester: HitTester;
   private readonly router: WireRouter;
+  private readonly paths: PathDrawing;
   private drag: Drag | null = null;
   private pending: string | null = null;
   public constructor(private readonly canvas: HTMLCanvasElement, private readonly model: ProjectModel, private readonly renderer: CanvasRenderer, private readonly commit: () => void) {
     this.tester=new HitTester(model);this.router=new WireRouter(model);
+    this.paths=new PathDrawing(model,commit);
     canvas.addEventListener('pointerdown',event=>this.down(event));
     canvas.addEventListener('pointermove',event=>this.move(event));
     canvas.addEventListener('pointerup',event=>this.up(event));
@@ -24,7 +27,7 @@ export class PointerController {
     canvas.addEventListener('dblclick',event=>this.doubleClick(event));
     canvas.addEventListener('wheel',event=>this.wheel(event),{passive:false});
   }
-  public setTool(next: Tool): void {this.tool=next;this.pending=null;this.renderer.invalidate();}
+  public setTool(next: Tool): void {this.paths.finish();this.tool=next;this.pending=null;this.renderer.invalidate();}
   private pos(event: PointerEvent | MouseEvent | WheelEvent): { screen: Point; world: Point } {
     const rect=this.canvas.getBoundingClientRect();const screen={x:event.clientX-rect.left,y:event.clientY-rect.top};
     return {screen,world:this.renderer.toWorld(screen.x,screen.y)};
@@ -47,6 +50,9 @@ export class PointerController {
       this.model.project.symbols.push(item);
       this.model.selection={kind:'symbol',id:item.id};
       this.model.changed();this.commit();this.drag=null;return;
+    }
+    if (this.tool==='polyline'||this.tool==='polygon') {
+      this.paths.vertex(this.tool,this.grid(world));this.drag=null;return;
     }
     if (this.tool==='rectangle'||this.tool==='ellipse'||this.tool==='line') {this.startShape(world,this.tool);return;}
     const wire=hit?.kind==='segment'?this.model.project.wires.find(item=>item.id===hit.id):undefined;
@@ -109,6 +115,7 @@ export class PointerController {
       shape.width=drawing?world.x-shape.x:shape.width;
       shape.height=drawing?world.y-shape.y:shape.height;
       shape.x+=drawing?0:dx;shape.y+=drawing?0:dy;
+      if (!drawing) shape.points?.forEach(point=>{point.x+=dx;point.y+=dy;});
     }
     drag.prior=world;drag.screen=screen;this.model.changed();
   }
@@ -157,6 +164,7 @@ export class PointerController {
     this.model.connectAnchor(sourceId,junction);
   }
   private doubleClick(event:MouseEvent):void {
+    if (this.paths.isDrawing){this.paths.finish();return;}
     const world=this.pos(event).world;const hit=this.tester.at(world,12/this.renderer.zoom);
     if (hit?.kind!=='segment') return;
     const wire=this.model.project.wires.find(item=>item.id===hit.id);
@@ -167,6 +175,6 @@ export class PointerController {
     this.model.selection={kind:'wire',id:wire.id};this.commit();
   }
   private wheel(event:WheelEvent):void {event.preventDefault();const screen=this.pos(event).screen;this.renderer.zoomAt(event.deltaY<0?1.12:1/1.12,screen);}
-  public cancelPending():void {this.pending=null;this.drag=null;this.renderer.invalidate();}
+  public cancelPending():void {this.paths.cancel();this.pending=null;this.drag=null;this.renderer.invalidate();}
   private cancel():void {this.cancelPending();}
 }
