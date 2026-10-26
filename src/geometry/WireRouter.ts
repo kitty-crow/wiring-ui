@@ -1,5 +1,6 @@
 import { createId, pointDistance, type Point, type Wire } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
+import { OrthogonalGeometry } from './OrthogonalGeometry';
 export interface Segment { a: Point; b: Point }
 export interface Crossing { x: number; y: number; wireId: string; verticalWireId: string; segment: number; direction: number }
 
@@ -73,27 +74,88 @@ export class WireRouter {
     return result;
   }
   public hit(wire: Wire, point: Point, margin=9): boolean { return (this.nearestSegment(wire,point)?.distance ?? Infinity) <= margin; }
-  /** Split a cable into two electrically connected segments at one persistent junction. */
-  public split(wire: Wire, position: Point, junctionId?: string): string {
-    const junction = junctionId ? this.model.project.anchors.find(item => item.id === junctionId) : undefined;
-    const anchor = junction ?? this.model.createAnchor(position, 'junction');
-    anchor.kind = 'junction';
-    const path = this.path(wire);
-    const nearest = this.nearestSegment(wire,position);
-    const index = nearest?.index ?? 0;
-    const left = path.slice(1,index+1);
-    const right = path.slice(index+1,-1);
-    const oldTo = wire.to;
-    wire.to = anchor.id;
-    wire.points = left;
-    this.model.project.wires.push({ ...structuredClone(wire), id: createId(), from: anchor.id, to: oldTo, points: right });
+  /** Freeze an auto route into explicit editable points before moving a leg. */
+  public slideLeg(wire: Wire, index: number, delta: number, source = this.path(wire)): void {
+    const updated = OrthogonalGeometry.slide(source,index,delta);
+    wire.points = updated.slice(1,-1);
     this.model.changed();
-    return anchor.id;
   }
-  /** Joining two cables merges their connectivity, with a persistent visible node. */
-  public join(first: Wire, second: Wire, position: Point): string {
-    const shared = this.split(first,position);
-    this.split(second,position,shared);
-    return shared;
+
+  public addBend(wire:Wire,position:Point):boolean {
+    const nearest=this.nearestSegment(wire,position);
+    if (!nearest || nearest.distance > 12) return false;
+    const route=OrthogonalGeometry.insert(this.path(wire),nearest.index,nearest.point);
+    wire.points=route.slice(1,-1);
+    this.model.changed();
+    return true;
+  }
+
+  /** Find only genuine geometric intersections; nearby parallel paths do not join. */
+  public intersection(first:Wire,second:Wire,near:Point,tolerance=12):Point|null {
+    if (first.id===second.id) return null;
+    let result:Point|null=null;
+    let distance=tolerance;
+    for (const a of this.segments(first)) {
+      for (const b of this.segments(second)) {
+        const intersection=OrthogonalGeometry.intersection(a,b);
+        if (!intersection) continue;
+        const separation=pointDistance(intersection,near);
+        if (separation>distance) continue;
+        distance=separation;
+        result=intersection;
+      }
+    }
+    return result;
+  }
+
+  /** Split a cable at a real point on its route, preserving both drawn branches. */
+  public split(wire:Wire,position:Point,junctionId?:string):string|null {
+    const nearest=this.nearestSegment(wire,position);
+    if (!nearest || nearest.distance>12) return null;
+    const path=this.path(wire);
+    const location=nearest.point;
+    const first=path[0];
+    const last=path.at(-1);
+    if (!first || !last) return null;
+    if (pointDistance(first,location)<1 || pointDistance(last,location)<1) return null;
+    const originalTo=wire.to;
+    const before=this.compact([...path.slice(0,nearest.index+1),location]);
+    const after=this.compact([location,...path.slice(nearest.index+1)]);
+    const existing=junctionId?this.model.project.anchors.find(item=>item.id===junctionId):undefined;
+    if (junctionId && !existing) return null;
+    const node=existing ?? this.model.createAnchor(location,'junction');
+    node.kind='junction';
+    wire.to=node.id;
+    wire.points=this.manualPoints(before);
+    this.model.project.wires.push({
+      ...structuredClone(wire),id:createId(),from:node.id,to:originalTo,
+      points:this.manualPoints(after)
+    });
+    this.model.changed();
+    return node.id;
+  }
+
+  /** Both cables must physically intersect at the requested point. */
+  public join(first:Wire,second:Wire,position:Point):string|null {
+    const location=this.intersection(first,second,position);
+    if (!location) return null;
+    const aStart=this.model.anchor(first.from);
+    const aEnd=this.model.anchor(first.to);
+    const bStart=this.model.anchor(second.from);
+    const bEnd=this.model.anchor(second.to);
+    if ([aStart,aEnd,bStart,bEnd].some(point=>point && pointDistance(point,location)<1)) return null;
+    const shared=this.split(first,location);
+    if (!shared) return null;
+    const branch=this.split(second,location,shared);
+    return branch ? shared : null;
+  }
+
+  /** Force a straight child branch to stay manual instead of auto-routing it. */
+  private manualPoints(path:readonly Point[]):Point[] {
+    if (path.length>2) return path.slice(1,-1).map(point=>({...point}));
+    const a=path[0];
+    const b=path[1];
+    if (!a || !b) return [];
+    return [{x:(a.x+b.x)/2,y:(a.y+b.y)/2}];
   }
 }
