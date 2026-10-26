@@ -93,6 +93,23 @@ export class ProjectModel {
     component.pins = component.pins.filter(pin => pin.id !== pinId);
     this.changed();
   }
+  /** Merge a loose end with a terminal or junction, preserving all cable identities. */
+  public connectAnchor(sourceId:string,targetId:string):boolean {
+    if (sourceId===targetId || !this.anchor(targetId)) return false;
+    const source=this.state.anchors.find(item=>item.id===sourceId);
+    if (!source) return false;
+    const connected=this.state.wires.some(item=>item.from===sourceId||item.to===sourceId);
+    if (!connected) return false;
+    for (const wire of this.state.wires) {
+      if (wire.from===sourceId) wire.from=targetId;
+      if (wire.to===sourceId) wire.to=targetId;
+    }
+    this.state.anchors=this.state.anchors.filter(item=>item.id!==sourceId);
+    const node=this.state.anchors.find(item=>item.id===targetId);
+    if (node) node.kind='junction';
+    this.changed();
+    return true;
+  }
   public reconnect(wire: Wire, endpoint: 'from' | 'to', anchorId: string): void {
     wire[endpoint] = anchorId;
     this.changed();
