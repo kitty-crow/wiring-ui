@@ -3,7 +3,7 @@ export type EditorCommand =
   | 'undo' | 'redo' | 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'select-all'
   | 'save' | 'save-as' | 'open' | 'new' | 'print' | 'fit' | 'escape'
   | 'tool-select' | 'tool-pan' | 'tool-wire' | 'tool-component' | 'tool-junction'
-  | 'tool-text' | 'tool-symbol' | 'tool-rectangle' | 'tool-ellipse' | 'tool-line'
+  | 'tool-text' | 'tool-symbol' | 'tool-rectangle' | 'tool-ellipse' | 'tool-line' | 'tool-polyline' | 'tool-polygon'
   | 'grid' | 'shortcuts' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right'
   | 'macro-toggle' | 'macro-play' | 'context-menu';
 
@@ -45,7 +45,7 @@ export class ShortcutController {
     const tools: Readonly<Record<string, EditorCommand>> = {
       v: 'tool-select', h: 'tool-pan', w: 'tool-wire', b: 'tool-component',
       j: 'tool-junction', t: 'tool-text', s: 'tool-symbol', r: 'tool-rectangle',
-      e: 'tool-ellipse', l: 'tool-line', g: 'grid', f: 'fit'
+      e: 'tool-ellipse', l: 'tool-line', p: 'tool-polygon', q: 'tool-polyline', g: 'grid', f: 'fit'
     };
     return tools[key] ?? null;
   }
