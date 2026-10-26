@@ -111,6 +111,22 @@ try {
   await page.getByRole('button', { name: 'Block', exact: true }).click();
   await page.locator('#editor-canvas').click({ position: { x: 230, y: 250 } });
   await page.waitForFunction(() => (document.querySelector('#status')?.textContent ?? '').includes('4 blocks'));
+  await page.getByRole('button',{name:'Polygon',exact:true}).click();
+  const canvas=page.locator('#editor-canvas');
+  await canvas.click({position:{x:585,y:260}});
+  await canvas.click({position:{x:630,y:275}});
+  await canvas.dblclick({position:{x:610,y:325}});
+  const polygonDownload=page.waitForEvent('download');
+  await page.keyboard.press('Control+s');
+  const polygonFile=await polygonDownload;
+  const polygonPath=await polygonFile.path();
+  if (!polygonPath)throw Error('Polygon export did not download');
+  const polygonProject=JSON.parse(await readFile(polygonPath,'utf8')) as {
+    shapes:Array<{kind:string;points?:Array<{x:number;y:number}>}>
+  };
+  const polygon=polygonProject.shapes.find(item=>item.kind==='polygon');
+  if (polygon?.points?.length!==3)throw Error('Canvas polygon tool did not persist three distinct vertices');
+  console.log('Interactive polygon drawing and export confirmed');
   if (errors.length > 0) throw new Error('Browser runtime errors:\n' + errors.join('\n'));
   console.log('Production HTML browser boot and editing smoke passed.');
 } finally {
