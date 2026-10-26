@@ -26,9 +26,9 @@ export class ClipboardService {
     if (selected.kind === 'shape') items.shapes = structuredClone(project.shapes.filter(item => item.id === selected.id));
     if (selected.kind === 'symbol') items.symbols = structuredClone(project.symbols.filter(item => item.id === selected.id));
     if (selected.kind === 'anchor') items.anchors = structuredClone(project.anchors.filter(item => item.id === selected.id));
-    if (selected.kind === 'wire' || selected.kind === 'waypoint') {
+    if (selected.kind === 'wire' || selected.kind === 'waypoint')
       items.wires = structuredClone(project.wires.filter(item => item.id === selected.id));
-      for (const wire of items.wires) {
+    for (const wire of items.wires) {
         for (const endpoint of ['from', 'to'] as const) {
           const point = this.model.anchor(wire[endpoint]);
           if (!point) continue;
@@ -37,7 +37,6 @@ export class ClipboardService {
           wire[endpoint] = detached.id;
         }
       }
-    }
     const count = Object.values(items).reduce((sum, group) => sum + group.length, 0);
     if (count === 0) return false;
     this.clipboard = items;
