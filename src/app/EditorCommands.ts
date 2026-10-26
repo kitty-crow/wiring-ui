@@ -112,7 +112,7 @@ export class EditorCommands {
     this.model.selection=this.history.selection;
     this.model.changed();
     this.persisted();
-    this.status(direction === 'undo' ? 'Undone' : 'Redone');
+    this.status((direction === 'undo' ? 'Undone' : 'Redone') + ' · ' + this.model.project.components.length + ' blocks · ' + this.model.project.wires.length + ' cables · ' + this.model.project.symbols.length + ' symbols');
   }
   private isRecordable(command: EditorCommand): boolean {
     return command === 'duplicate' || command === 'delete' ||
