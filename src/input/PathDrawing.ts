@@ -1,4 +1,4 @@
-import { createId, pointDistance, type Point, type Shape, type ShapeKind } from '../model/types';
+import { createId, pointDistance, type Point, type Shape } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
 
 /** Adds arbitrary user-defined vertices without coupling path construction to the canvas. */
