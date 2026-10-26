@@ -12,7 +12,7 @@ const built = await Bun.build({
 });
 if (!built.success) throw new Error(built.logs.map(item => String(item)).join('\n'));
 
-const output = built.outputs.find(item => item.type === 'entry-point');
+const output = built.outputs[0];
 if (!output) throw new Error('JavaScript entry-point output missing');
 const javascript = await output.text();
 const css = await readFile('styles/shell.css', 'utf8');
