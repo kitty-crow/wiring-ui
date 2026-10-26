@@ -10,6 +10,7 @@ const select=(label:string,key:string,value:string,options:readonly string[]):st
 export class Inspector {
   public constructor(private readonly root: HTMLElement, private readonly model: ProjectModel, private readonly record:()=>void) {
     this.root.addEventListener('change',event=>this.handleChange(event));
+    this.root.addEventListener('input',event=>this.previewColour(event));
     this.root.addEventListener('click',event=>this.handleClick(event));
   }
   public render():void {
@@ -44,9 +45,19 @@ export class Inspector {
   }
   private renderWire(wire:Wire):void {
     this.root.innerHTML='<div class="panel-title">Cable</div>'+field('Cable label','label',wire.label)+field('Colour','color',wire.color,'color')+
+      '<button class="wide" data-action="apply-colour">Apply colour</button>'+
       field('Thickness','width',String(wire.width),'number')+select('Line pattern','dash',wire.dash,['solid','dash','dot','dashdot'])+
       '<button class="wide" data-action="detach-from">Disconnect start</button><button class="wide" data-action="detach-to">Disconnect end</button>'+
       '<button class="wide" data-action="add-bend">+ Add routing node</button><button class="wide" data-action="remove-bend">Remove last routing node</button><button class="wide" data-action="reset-route">Reset automatic route</button><p class="help">Drag cable segments or square bend handles while maintaining the anchors. Reattach free ends by dropping them onto terminals.</p>'+this.actions();
+  }
+  /** Preview the picker in real time without rebuilding the inspector mid-drag. */
+  private previewColour(event:Event):void {
+    const target=event.target;
+    if (!(target instanceof HTMLInputElement) || target.type!=='color' || target.dataset.key!=='color')return;
+    const entity=this.entity(this.model.selection);
+    if (!entity || !('color' in entity))return;
+    Object.assign(entity,{color:target.value});
+    this.model.changed();
   }
   private handleChange(event:Event):void {
     const target=event.target;
@@ -86,6 +97,11 @@ export class Inspector {
     const remove=target.dataset.removePin;
     if (remove){this.removePin(remove);return;}
     const action=target.dataset.action;
+    if(action==='apply-colour'){
+      const input=this.root.querySelector<HTMLInputElement>('input[type="color"][data-key="color"]');
+      const entity=this.entity(this.model.selection);
+      if(input&&entity&&'color' in entity)Object.assign(entity,{color:input.value});
+    }
     if(action==='delete')this.model.removeSelected();
     if(action==='duplicate')this.model.duplicateSelected();
     if(action==='add-pin')this.addSelectedPin();
