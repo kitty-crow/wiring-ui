@@ -1,0 +1,124 @@
+import { ClipboardService } from '../model/ClipboardService';
+import { HistoryManager } from '../model/HistoryManager';
+import { ProjectModel } from '../model/ProjectModel';
+import { WireRouter } from '../geometry/WireRouter';
+import type { Point, Wire } from '../model/types';
+import type { EditorCommand } from '../input/ShortcutController';
+import type { ContextAction } from '../ui/ContextMenuController';
+
+/** Business commands: independent from keyboard, pointer and menu presentation. */
+export class EditorCommands {
+  private readonly history: HistoryManager;
+  private readonly clipboard: ClipboardService;
+  private readonly router: WireRouter;
+  private recording = false;
+  private replaying = false;
+  private macro: EditorCommand[] = [];
+  public constructor(
+    private readonly model: ProjectModel,
+    private readonly changed: () => void,
+    private readonly persisted: () => void,
+    private readonly external: (command: EditorCommand) => void,
+    private readonly status: (message: string) => void
+  ) {
+    this.history = new HistoryManager(model.project);
+    this.clipboard = new ClipboardService(model);
+    this.router = new WireRouter(model);
+  }
+  /** A commit is one complete user action, including inspector and pointer edits. */
+  public record(): void { this.history.record(this.model.project); this.changed(); this.persisted(); }
+  public reset(): void { this.history.reset(this.model.project); this.changed(); }
+  public run(command: EditorCommand, event?: KeyboardEvent): void {
+    if (command === 'macro-toggle') { this.toggleMacro(); return; }
+    if (command === 'macro-play') { this.playMacro(); return; }
+    if (this.recording && !this.replaying && this.isRecordable(command)) this.macro.push(command);
+    if (command === 'undo' || command === 'redo') { this.restore(command); return; }
+    if (command === 'copy') { this.clipboard.copy(); return; }
+    if (command === 'select-all') { this.clipboard.selectAll(); return; }
+    if (command === 'cut') { if (this.clipboard.cut()) this.record(); return; }
+    if (command === 'paste') { if (this.clipboard.paste()) this.record(); return; }
+    if (command === 'duplicate') { if (this.clipboard.duplicate()) this.record(); return; }
+    if (command === 'delete') { if (this.model.selection) { this.model.removeSelected(); this.record(); } return; }
+    if (command.startsWith('nudge-')) { this.nudge(command, event); return; }
+    this.external(command);
+  }
+  public menu(action: ContextAction, point: Point): void {
+    if (action === 'copy' || action === 'cut' || action === 'paste' ||
+        action === 'duplicate' || action === 'delete') {
+      this.run(action);
+      return;
+    }
+    if (action === 'add-terminal') {
+      const component = this.model.selection?.kind === 'component'
+        ? this.model.component(this.model.selection.id) : undefined;
+      if (component) this.model.addPin(component);
+      else this.model.addComponent(point);
+      this.record();
+      return;
+    }
+    if (action === 'disconnect-terminal') {
+      const selection = this.model.selection;
+      if (!selection) return;
+      const id = selection.id;
+      const related = this.model.project.wires.filter(item => item.from === id || item.to === id);
+      for (const wire of related) {
+        if (wire.from === id) this.model.detachEnd(wire, 'from');
+        if (wire.to === id) this.model.detachEnd(wire, 'to');
+      }
+      this.record();
+      return;
+    }
+    const selected = this.model.selection;
+    if (!selected || (selected.kind !== 'wire' && selected.kind !== 'waypoint')) return;
+    const wire = this.model.project.wires.find(item => item.id === selected.id);
+    if (!wire) return;
+    this.modifyCable(action, wire, point);
+  }
+  private modifyCable(action: ContextAction, wire: Wire, point: Point): void {
+    if (action === 'remove-bend') {
+      if (this.model.selection?.index !== undefined) wire.points.splice(this.model.selection.index, 1);
+      this.model.selection = { kind: 'wire', id: wire.id };
+    }
+    if (action === 'add-bend') {
+      const location = this.router.nearestSegment(wire, point);
+      if (!location) return;
+      wire.points.splice(Math.min(location.index, wire.points.length), 0, location.point);
+      this.model.selection = { kind: 'wire', id: wire.id };
+    }
+    if (action === 'split-wire') this.router.split(wire, point);
+    if (action === 'reset-route') wire.points = [];
+    if (action === 'disconnect-start') this.model.detachEnd(wire, 'from');
+    if (action === 'disconnect-end') this.model.detachEnd(wire, 'to');
+    this.record();
+  }
+  private nudge(command: EditorCommand, event?: KeyboardEvent): void {
+    const distance = event?.altKey ? 1 : event?.shiftKey ? 20 : 10;
+    const x = command === 'nudge-left' ? -distance : command === 'nudge-right' ? distance : 0;
+    const y = command === 'nudge-up' ? -distance : command === 'nudge-down' ? distance : 0;
+    if (this.clipboard.nudge(x,y)) this.record();
+  }
+  private restore(direction: 'undo' | 'redo'): void {
+    const snapshot = direction === 'undo' ? this.history.undo() : this.history.redo();
+    if (!snapshot) return;
+    this.model.set(snapshot);
+    this.persisted();
+    this.status(direction === 'undo' ? 'Undone' : 'Redone');
+  }
+  private isRecordable(command: EditorCommand): boolean {
+    return command === 'duplicate' || command === 'delete' ||
+      command === 'paste' || command.startsWith('nudge-') || command === 'grid';
+  }
+  private toggleMacro(): void {
+    this.recording = !this.recording;
+    if (this.recording) this.macro = [];
+    this.status(this.recording ? 'Recording shortcut macro' : 'Macro saved: ' + this.macro.length + ' commands');
+  }
+  private playMacro(): void {
+    if (this.recording || this.replaying || this.macro.length === 0) return;
+    this.replaying = true;
+    try {
+      for (const command of this.macro) this.run(command);
+      this.status('Played ' + this.macro.length + ' macro commands');
+    } finally { this.replaying = false; }
+  }
+}
