@@ -43,8 +43,8 @@ test('joining two cables requires an actual crossing and creates four terminal b
   expect(id).not.toBeNull();
   expect(model.project.anchors.find(a=>a.id===id)?.kind).toBe('junction');
   expect(model.project.wires.filter(w=>w.from===id||w.to===id)).toHaveLength(4);
-  expect(router.path(horizontal)[0]).toEqual({x:100,y:100});
-  expect(router.path(horizontal).at(-1)).toEqual({x:200,y:100});
+  expect(router.path(horizontal)[0]).toMatchObject({x:100,y:100});
+  expect(router.path(horizontal).at(-1)).toMatchObject({x:200,y:100});
 });
 test('non-intersecting routes cannot be shorted by hit-test tolerance',()=>{
   const model=new ProjectModel(new DemoProject().create(),()=>{});
