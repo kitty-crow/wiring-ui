@@ -1,7 +1,7 @@
 import { createId, pointDistance, type Point, type Wire } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
 export interface Segment { a: Point; b: Point }
-export interface Crossing { x: number; y: number; wireId: string; segment: number }
+export interface Crossing { x: number; y: number; wireId: string; verticalWireId: string; segment: number; direction: number }
 
 /** Orthogonal routing with anchored endpoints and user-controlled waypoints. */
 export class WireRouter {
@@ -11,7 +11,9 @@ export class WireRouter {
     const end = this.model.anchor(wire.to);
     if (!start || !end) return [];
     if (wire.points.length === 0) {
-      const lane = (start.x + end.x) / 2;
+      // Allocate each cable a stable lane to avoid visually coincident trunks.
+      const position=this.model.project.wires.findIndex(item=>item.id===wire.id);
+      const lane=(start.x+end.x)/2 + ((Math.max(position,0)%9)-4)*19;
       return this.compact([start, { x: lane, y: start.y }, { x: lane, y: end.y }, end]);
     }
     const output = [start];
@@ -51,7 +53,7 @@ export class WireRouter {
             const x = vertical.a.x; const y = horizontal.a.y;
             const insideH = x > Math.min(horizontal.a.x, horizontal.b.x) + 13 && x < Math.max(horizontal.a.x, horizontal.b.x) - 13;
             const insideV = y > Math.min(vertical.a.y, vertical.b.y) + 10 && y < Math.max(vertical.a.y, vertical.b.y) - 10;
-            if (insideH && insideV) found.push({ x, y, wireId: current.id, segment: part });
+            if (insideH && insideV) found.push({ x, y, wireId: current.id, verticalWireId: other.id, segment: part, direction: Math.sign(horizontal.b.x-horizontal.a.x) || 1 });
           }
         }
       }

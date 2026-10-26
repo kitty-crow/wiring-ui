@@ -1,35 +1,35 @@
 import { ProjectModel } from '../model/ProjectModel';
-import { WireRouter, type Crossing } from '../geometry/WireRouter';
+import { WireRouter } from '../geometry/WireRouter';
 import { componentHeight, type Component, type Point, type Shape, type Wire } from '../model/types';
 import { GpuGrid } from './GpuGrid';
 import { SymbolLibrary } from '../symbols/SymbolLibrary';
+import { CrossoverPainter } from './CrossoverPainter';
 
 export class CanvasRenderer {
   public zoom = 1;
   public offset: Point = { x: 25, y: 25 };
   public dark = false;
   public grid = true;
-  private dirty = true;
+  private frameRequested = false;
   private background: HTMLImageElement | null = null;
   private backgroundData = '';
   private readonly gpu: GpuGrid;
   private readonly router: WireRouter;
   private readonly symbols = new SymbolLibrary();
+  private readonly bridges = new CrossoverPainter();
   private readonly ctx: CanvasRenderingContext2D;
   public constructor(private readonly canvas: HTMLCanvasElement, gridCanvas: HTMLCanvasElement, private readonly model: ProjectModel) {
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) throw new Error('2D canvas is unavailable');
     this.ctx = ctx; this.gpu = new GpuGrid(gridCanvas); this.router = new WireRouter(model);
-    this.frame();
+    this.invalidate();
   }
   public get backend(): string { return this.gpu.name; }
-  public invalidate(): void { this.dirty = true; }
-  private frame = (): void => {
-    requestAnimationFrame(this.frame);
-    if (!this.dirty) return;
-    this.dirty = false;
-    this.paint();
-  };
+  public invalidate():void {
+    if(this.frameRequested)return;
+    this.frameRequested=true;
+    requestAnimationFrame(()=>{this.frameRequested=false;this.paint();});
+  }
   public resize(): void {
     const host = this.canvas.parentElement;
     if (!host) return;
@@ -69,7 +69,8 @@ export class CanvasRenderer {
     this.paintTemplate(ctx);
     for (const shape of this.model.project.shapes) this.drawShape(ctx,shape,ink);
     const crossings = this.router.crossings();
-    for (const wire of this.model.project.wires) this.drawWire(ctx,wire,crossings);
+    for (const wire of this.model.project.wires) this.drawWire(ctx,wire);
+    this.bridges.draw(ctx,crossings,this.model.project.wires,paper);
     for (const component of this.model.project.components) this.drawComponent(ctx,component,ink,paper);
     for (const symbol of this.model.project.symbols) this.symbols.draw(ctx,symbol);
     for (const anchor of this.model.project.anchors) {
@@ -115,28 +116,19 @@ export class CanvasRenderer {
   private applyDash(ctx: CanvasRenderingContext2D, dash: string): void {
     ctx.setLineDash(dash === 'dash' ? [9,6] : dash === 'dot' ? [2,6] : dash === 'dashdot' ? [12,4,2,4] : []);
   }
-  private drawWire(ctx: CanvasRenderingContext2D, wire: Wire, crossings: Crossing[]): void {
-    const path = this.router.path(wire);
-    if (path.length < 2) return;
-    ctx.save(); ctx.strokeStyle = wire.color;ctx.lineWidth = wire.width;this.applyDash(ctx,wire.dash);
-    if (this.model.selection?.id === wire.id) {ctx.shadowColor = '#2563eb';ctx.shadowBlur = 7;ctx.lineWidth += 1;}
-    ctx.beginPath(); ctx.moveTo(path[0]?.x ?? 0,path[0]?.y ?? 0);
-    for (let index=1; index<path.length;index++) {
-      const a = path[index-1];const b=path[index];
-      if (!a || !b) continue;
-      const hits = crossings.filter(hit => hit.wireId===wire.id && hit.segment===index-1).sort((a,b) => (a.x-b.x)*Math.sign((path[index]?.x??0)-(path[index-1]?.x??0)));
-      for (const hit of hits) {
-        const sign = Math.sign(b.x-a.x);
-        if (sign===0) continue;
-        ctx.lineTo(hit.x-8*sign,hit.y);
-        // A semicircular jump is drawn above the crossing, without a connection dot.
-        ctx.bezierCurveTo(hit.x-8*sign,hit.y-12,hit.x+8*sign,hit.y-12,hit.x+8*sign,hit.y);
-      }
-      ctx.lineTo(b.x,b.y);
-    }
+  private drawWire(ctx:CanvasRenderingContext2D,wire:Wire):void {
+    const path=this.router.path(wire);
+    if(path.length<2)return;
+    ctx.save();ctx.strokeStyle=wire.color;ctx.lineWidth=wire.width;this.applyDash(ctx,wire.dash);
+    if(this.model.selection?.id===wire.id){ctx.shadowColor='#2563eb';ctx.shadowBlur=5;}
+    ctx.beginPath();ctx.moveTo(path[0]?.x??0,path[0]?.y??0);
+    for(const point of path.slice(1))ctx.lineTo(point.x,point.y);
     ctx.stroke();ctx.shadowBlur=0;
-    if (this.model.selection?.id === wire.id) for (const node of wire.points) { ctx.fillStyle = '#fff'; ctx.strokeStyle=wire.color;ctx.fillRect(node.x-5,node.y-5,10,10);ctx.strokeRect(node.x-5,node.y-5,10,10); }
-    if (wire.label) this.drawWireLabel(ctx,wire,path);
+    if(this.model.selection?.id===wire.id)for(const node of wire.points){
+      ctx.fillStyle='#fff';ctx.strokeStyle=wire.color;
+      ctx.fillRect(node.x-5,node.y-5,10,10);ctx.strokeRect(node.x-5,node.y-5,10,10);
+    }
+    if(wire.label)this.drawWireLabel(ctx,wire,path);
     ctx.restore();
   }
   private drawWireLabel(ctx:CanvasRenderingContext2D,wire:Wire,path:Point[]):void {

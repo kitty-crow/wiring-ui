@@ -7,7 +7,7 @@ import { ProjectStore } from '../storage/ProjectStore';
 import { SettingsStore, type Settings } from '../storage/SettingsStore';
 import { ProjectCodec } from '../io/ProjectCodec';
 import { PdfTemplate } from '../io/PdfTemplate';
-import { createId } from '../model/types';
+import { createId, componentHeight } from '../model/types';
 import { SymbolLibrary } from '../symbols/SymbolLibrary';
 
 const byId = <T extends HTMLElement>(id:string):T => {
@@ -27,6 +27,8 @@ export class EditorApp {
   private readonly pointer: PointerController;
   private readonly inspector: Inspector;
   private saveSerial=0;
+  private inspectorSelection='';
+  private hoveredComponentId:string|null=null;
   private readonly pageFile=byId<HTMLInputElement>('file-input');
   private readonly templateFile=byId<HTMLInputElement>('template-input');
   private readonly status=byId<HTMLElement>('status');
@@ -52,13 +54,14 @@ export class EditorApp {
   }
   private updated(): void {
     this.renderer.invalidate();
-    this.inspector.render();
+    const key=this.model.selection?.kind+':'+this.model.selection?.id+':'+this.model.selection?.index;
+    if (key!==this.inspectorSelection){this.inspector.render();this.inspectorSelection=key;}
     const name=byId<HTMLElement>('document-name');
     name.textContent=this.model.project.name;
     this.status.textContent=this.model.project.components.length+' blocks · '+this.model.project.wires.length+' cables · '+this.renderer.backend;
   }
   private commit():void {
-    this.updated();
+    this.updated();this.inspector.render();
     const serial=++this.saveSerial;
     queueMicrotask(()=>{if (serial!==this.saveSerial)return;void this.store.save(this.model.project).catch(error=>this.alert('Auto-save unavailable: '+String(error)));});
   }
@@ -81,10 +84,9 @@ export class EditorApp {
     picker.innerHTML=new SymbolLibrary().kinds().map(kind=>'<option value="'+kind+'">'+kind+'</option>').join('');
     picker.addEventListener('change',()=>{this.pointer.symbol=picker.value as typeof this.pointer.symbol;this.selectTool('symbol');});
     byId<HTMLElement>('hover-add-pin').addEventListener('click',()=>{
-      const selected=this.model.selection;
-      const component=selected?.kind==='component'?this.model.component(selected.id):undefined;
+      const component=this.hoveredComponentId?this.model.component(this.hoveredComponentId):undefined;
       if (!component)return;
-      this.model.addPin(component);this.commit();
+      this.model.selection={kind:'component',id:component.id};this.model.addPin(component);this.commit();
     });
     this.sheet.addEventListener('pointermove',event=>this.showHover(event));
     this.sheet.addEventListener('pointerleave',()=>{byId<HTMLElement>('hover-add-pin').hidden=true;});
@@ -92,14 +94,15 @@ export class EditorApp {
   private selectTool(tool:Tool):void {const button=document.querySelector<HTMLButtonElement>('[data-tool="'+tool+'"]');button?.click();}
   private showHover(event:PointerEvent):void {
     const hover=byId<HTMLElement>('hover-add-pin');
-    const selected=this.model.selection;
-    const component=selected?.kind==='component'?this.model.component(selected.id):undefined;
+    const bounds=this.sheet.getBoundingClientRect();
+    const world=this.renderer.toWorld(event.clientX-bounds.left,event.clientY-bounds.top);
+    const component=this.model.project.components.find(item=>world.x>=item.x&&world.x<=item.x+item.width&&world.y>=item.y&&world.y<=item.y+componentHeight(item));
+    this.hoveredComponentId=component?.id??null;
     if (!component){hover.hidden=true;return;}
     const position=this.renderer.toScreen({x:component.x+component.width,y:component.y});
     hover.style.left=Math.max(4,Math.min(this.sheet.clientWidth-120,position.x-120))+'px';
     hover.style.top=Math.max(4,position.y-36)+'px';
     hover.hidden=false;
-    void event;
   }
   private setupInputs():void {
     this.pageFile.addEventListener('change',()=>void this.loadFile());

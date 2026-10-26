@@ -3,6 +3,7 @@ import { type Component, type Project, type Selection, type Wire } from '../mode
 
 const escape=(value:string):string=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const field=(label:string,key:string,value:string,type='text'):string=>'<label class="field"><span>'+label+'</span><input data-key="'+key+'" type="'+type+'" value="'+escape(value)+'"></label>';
+const multiline=(label:string,key:string,value:string):string=>'<label class="field"><span>'+label+'</span><textarea data-key="'+key+'" rows="4">'+escape(value)+'</textarea></label>';
 const select=(label:string,key:string,value:string,options:readonly string[]):string=>'<label class="field"><span>'+label+'</span><select data-key="'+key+'">'+options.map(option=>'<option value="'+escape(option)+'" '+(option===value?'selected':'')+'>'+escape(option)+'</option>').join('')+'</select></label>';
 
 /** Typed property panel. No rendering or geometry dependencies. */
@@ -19,7 +20,7 @@ export class Inspector {
     const wire=selected.kind==='wire'||selected.kind==='waypoint'?this.model.project.wires.find(item=>item.id===selected.id):undefined;
     if (wire){this.renderWire(wire);return;}
     const note=selected.kind==='annotation'?this.model.project.annotations.find(item=>item.id===selected.id):undefined;
-    if (note){this.root.innerHTML='<div class="panel-title">Text annotation</div>'+field('Text','text',note.text)+field('Font','font',note.font)+field('Font size','size',String(note.size),'number')+field('Colour','color',note.color,'color')+select('Weight','bold',note.bold?'true':'false',['false','true'])+this.actions();return;}
+    if (note){this.root.innerHTML='<div class="panel-title">Text annotation</div>'+multiline('Text','text',note.text)+field('Font','font',note.font)+field('Font size','size',String(note.size),'number')+field('Colour','color',note.color,'color')+select('Weight','bold',note.bold?'true':'false',['false','true'])+this.actions();return;}
     const symbol=selected.kind==='symbol'?this.model.project.symbols.find(item=>item.id===selected.id):undefined;
     if (symbol){this.root.innerHTML='<div class="panel-title">Circuit symbol</div>'+field('Label','label',symbol.label)+field('Scale','scale',String(symbol.scale),'number')+field('Rotation (degrees)','rotation',String(symbol.rotation),'number')+field('Colour','color',symbol.color,'color')+this.actions();return;}
     const anchor=selected.kind==='anchor'?this.model.project.anchors.find(item=>item.id===selected.id):undefined;
@@ -49,7 +50,7 @@ export class Inspector {
   }
   private handleChange(event:Event):void {
     const target=event.target;
-    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement))return;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement))return;
     const pinId=target.dataset.pin;
     if (pinId) {this.updatePin(pinId,target);return;}
     const key=target.dataset.key;
@@ -61,7 +62,7 @@ export class Inspector {
     if (key==='bold')value=value==='true';
     Object.assign(entity,{[key]:value});this.record();
   }
-  private updatePin(pinId:string,target:HTMLInputElement|HTMLSelectElement):void {
+  private updatePin(pinId:string,target:HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement):void {
     const match=this.model.pin(pinId);
     if (!match)return;
     const part=target.dataset.part;
