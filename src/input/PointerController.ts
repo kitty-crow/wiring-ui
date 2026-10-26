@@ -32,6 +32,7 @@ export class PointerController {
   private grid(point: Point): Point {return this.snap?{x:Math.round(point.x/10)*10,y:Math.round(point.y/10)*10}:point;}
   private down(event: PointerEvent): void {
     if (event.button!==0 && event.button!==1) return;
+    if (event.button===0) this.canvas.focus();
     const {screen,world}=this.pos(event);
     const hit=this.tester.at(world,11/this.renderer.zoom);
     this.drag={hit,start:world,prior:world,screen,moved:false,originalRoute:[]};
