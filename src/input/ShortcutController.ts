@@ -5,7 +5,7 @@ export type EditorCommand =
   | 'tool-select' | 'tool-pan' | 'tool-wire' | 'tool-component' | 'tool-junction'
   | 'tool-text' | 'tool-symbol' | 'tool-rectangle' | 'tool-ellipse' | 'tool-line'
   | 'grid' | 'shortcuts' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right'
-  | 'macro-toggle' | 'macro-play';
+  | 'macro-toggle' | 'macro-play' | 'context-menu';
 
 export class ShortcutController {
   public constructor(private readonly dispatch: (command: EditorCommand, event: KeyboardEvent) => void) {
@@ -32,6 +32,7 @@ export class ShortcutController {
         default: return null;
       }
     }
+    if (key === 'f10' && event.shiftKey) return 'context-menu';
     if (event.altKey && !key.startsWith('arrow')) return null;
     if (key === 'escape') return 'escape';
     if (key === 'delete' || key === 'backspace') return 'delete';
