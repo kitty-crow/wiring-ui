@@ -115,7 +115,7 @@ export class PointerController {
       shape.width=drawing?world.x-shape.x:shape.width;
       shape.height=drawing?world.y-shape.y:shape.height;
       shape.x+=drawing?0:dx;shape.y+=drawing?0:dy;
-      if (!drawing) shape.points?.forEach(point=>{point.x+=dx;point.y+=dy;});
+      shape.points?.forEach(point=>{point.x+=drawing?0:dx;point.y+=drawing?0:dy;});
     }
     drag.prior=world;drag.screen=screen;this.model.changed();
   }
