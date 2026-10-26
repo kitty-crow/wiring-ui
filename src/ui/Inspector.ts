@@ -27,7 +27,7 @@ export class Inspector {
     const anchor=selected.kind==='anchor'?this.model.project.anchors.find(item=>item.id===selected.id):undefined;
     if (anchor){this.root.innerHTML='<div class="panel-title">Free end / junction</div>'+select('Node type','kind',anchor.kind,['free','junction'])+field('X','x',String(anchor.x),'number')+field('Y','y',String(anchor.y),'number')+'<p class="help">Drag onto another terminal to reconnect. Junctions create real electrical continuity.</p>';return;}
     const shape=selected.kind==='shape'?this.model.project.shapes.find(item=>item.id===selected.id):undefined;
-    if (shape){this.root.innerHTML='<div class="panel-title">Shape</div>'+select('Type','kind',shape.kind,['rectangle','ellipse','line'])+field('Stroke colour','color',shape.color,'color')+field('Fill colour','fill',shape.fill)+field('Stroke width','stroke',String(shape.stroke),'number')+select('Line type','dash',shape.dash,['solid','dash','dot','dashdot'])+this.actions();return;}
+    if (shape){this.root.innerHTML='<div class="panel-title">Shape</div>'+select('Type','kind',shape.kind,['rectangle','ellipse','line','polyline','polygon'])+field('Stroke colour','color',shape.color,'color')+field('Fill colour','fill',shape.fill)+field('Stroke width','stroke',String(shape.stroke),'number')+select('Line type','dash',shape.dash,['solid','dash','dot','dashdot'])+this.actions();return;}
     this.renderProject(this.model.project);
   }
   private actions():string {return '<div class="property-actions"><button data-action="duplicate">Duplicate</button><button data-action="delete" class="danger">Delete</button></div>';}
