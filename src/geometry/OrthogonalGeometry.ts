@@ -12,7 +12,7 @@ export class OrthogonalGeometry {
   public static isOrthogonal(path: readonly Point[]): boolean {
     return path.slice(1).every((point, index) => {
       const prior = path[index];
-      return Boolean(prior) && (
+      return prior !== undefined && (
         Math.abs(point.x - prior.x) <= this.EPSILON ||
         Math.abs(point.y - prior.y) <= this.EPSILON
       );
