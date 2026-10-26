@@ -26,8 +26,8 @@ export class EditorCommands {
     this.router = new WireRouter(model);
   }
   /** A commit is one complete user action, including inspector and pointer edits. */
-  public record(): void { this.history.record(this.model.project); this.changed(); this.persisted(); }
-  public reset(): void { this.history.reset(this.model.project); this.changed(); }
+  public record(): void { this.history.record(this.model.project,this.model.selection); this.changed(); this.persisted(); }
+  public reset(): void { this.history.reset(this.model.project,this.model.selection); this.changed(); }
   public run(command: EditorCommand, event?: KeyboardEvent): void {
     if (command === 'macro-toggle') { this.toggleMacro(); return; }
     if (command === 'macro-play') { this.playMacro(); return; }
@@ -109,6 +109,8 @@ export class EditorCommands {
     const snapshot = direction === 'undo' ? this.history.undo() : this.history.redo();
     if (!snapshot) return;
     this.model.set(snapshot);
+    this.model.selection=this.history.selection;
+    this.model.changed();
     this.persisted();
     this.status(direction === 'undo' ? 'Undone' : 'Redone');
   }
