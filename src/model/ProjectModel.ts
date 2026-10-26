@@ -56,12 +56,28 @@ export class ProjectModel {
       this.detachPins(component?.pins.map(pin => pin.id) ?? []);
       this.state.components = this.state.components.filter(item => item.id !== id);
     }
-    if (selected.kind === 'wire' || selected.kind === 'waypoint') this.state.wires = this.state.wires.filter(item => item.id !== id);
+    if (selected.kind === 'all') {
+      this.state.components = []; this.state.anchors = []; this.state.wires = [];
+      this.state.annotations = []; this.state.shapes = []; this.state.symbols = [];
+    }
+    if (selected.kind === 'wire') this.state.wires = this.state.wires.filter(item => item.id !== id);
+    if (selected.kind === 'waypoint' && selected.index !== undefined) {
+      this.state.wires.find(item => item.id === id)?.points.splice(selected.index, 1);
+    }
     if (selected.kind === 'annotation') this.state.annotations = this.state.annotations.filter(item => item.id !== id);
     if (selected.kind === 'shape') this.state.shapes = this.state.shapes.filter(item => item.id !== id);
     if (selected.kind === 'symbol') this.state.symbols = this.state.symbols.filter(item => item.id !== id);
     const anchor = selected.kind === 'anchor' ? this.state.anchors.find(item => item.id === id) : undefined;
-    if (anchor) anchor.kind = 'free';
+    if (anchor) {
+      for (const wire of this.state.wires) {
+        for (const end of ['from', 'to'] as const) {
+          if (wire[end] !== id) continue;
+          const loose = this.createAnchor(anchor, 'free');
+          wire[end] = loose.id;
+        }
+      }
+      this.state.anchors = this.state.anchors.filter(item => item.id !== id);
+    }
     this.selection = null; this.changed();
   }
   public addPin(component: Component): Pin {
