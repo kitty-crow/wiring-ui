@@ -94,9 +94,7 @@ export class EditorCommands {
     this.record();
   }
   private addBend(wire: Wire, point: Point): void {
-    const location = this.router.nearestSegment(wire, point);
-    if (!location) return;
-    wire.points.splice(Math.min(location.index, wire.points.length), 0, location.point);
+    if (!this.router.addBend(wire,point))return;
     this.model.selection = { kind: 'wire', id: wire.id };
   }
   private nudge(command: EditorCommand, event?: KeyboardEvent): void {
