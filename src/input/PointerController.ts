@@ -71,13 +71,16 @@ export class PointerController {
     if (hit?.kind!=='segment') return;
     const wire=this.model.project.wires.find(item=>item.id===hit.id);
     if (!wire) return;
-    const target=this.router.nearestSegment(wire,point);
-    if (!target) return;
-    const others=this.model.project.wires.filter(item=>item.id!==wire.id);
-    const connected=others.find(item=>this.router.hit(item,target.point,10));
-    if (connected)this.router.join(wire,connected,this.grid(target.point));
-    else this.router.split(wire,this.grid(target.point));
-    this.commit();
+    const nearest=this.router.nearestSegment(wire,point);
+    if (!nearest) return;
+    const other=this.model.project.wires
+      .filter(item=>item.id!==wire.id)
+      .map(item=>({wire:item,location:this.router.intersection(wire,item,nearest.point)}))
+      .find(item=>item.location!==null);
+    const joined=other?.location
+      ? this.router.join(wire,other.wire,other.location)
+      : this.router.split(wire,nearest.point);
+    if (joined) this.commit();
   }
   private move(event:PointerEvent):void {
     const drag=this.drag;
@@ -110,23 +113,20 @@ export class PointerController {
     drag.prior=world;drag.screen=screen;this.model.changed();
   }
   private slideSegment(wire:Wire,index:number,drag:Drag,world:Point):void {
-    const path=drag.originalRoute;
-    const a=path[index];const b=path[index+1];
-    if (!a||!b) return;
-    const horizontal=Math.abs(a.y-b.y)<1;
+    const a=drag.originalRoute[index];
+    const b=drag.originalRoute[index+1];
+    if (!a || !b) return;
+    const horizontal=Math.abs(a.y-b.y)<.01;
     const delta=horizontal?world.y-drag.start.y:world.x-drag.start.x;
-    const shiftedA={x:a.x+(horizontal?0:delta),y:a.y+(horizontal?delta:0)};
-    const shiftedB={x:b.x+(horizontal?0:delta),y:b.y+(horizontal?delta:0)};
-    const updated=[...path.slice(0,index+1),shiftedA,shiftedB,...path.slice(index+1)];
-    wire.points=this.router.compact(updated).slice(1,-1);
+    this.router.slideLeg(wire,index,delta,drag.originalRoute);
   }
   private up(event:PointerEvent):void {
     const drag=this.drag;this.drag=null;
     if (this.canvas.hasPointerCapture(event.pointerId))this.canvas.releasePointerCapture(event.pointerId);
     if (!drag||!drag.moved) return;
-    const {world}=this.pos(event);const target=this.tester.at(world,12/this.renderer.zoom);
+    const {world}=this.pos(event);const target=this.tester.at(world,12/this.renderer.zoom,drag.hit?.id);
     const hit=drag.hit;
-    if (hit?.kind==='anchor' && target?.kind==='pin' && hit.id!==target.id)this.reattach(hit.id,target.id);
+    if (hit?.kind==='anchor' && (target?.kind==='pin'||target?.kind==='anchor') && hit.id!==target.id)this.reattach(hit.id,target.id);
     this.commit();
   }
   private pullPin(hit:Hit,drag:Drag):Hit {
@@ -150,6 +150,8 @@ export class PointerController {
       if(wire.to===from)wire.to=to;
     }
     this.model.project.anchors=this.model.project.anchors.filter(anchor=>anchor.id!==from);
+    const node=this.model.project.anchors.find(anchor=>anchor.id===to);
+    if (node) node.kind='junction';
   }
   private doubleClick(event:MouseEvent):void {
     const world=this.pos(event).world;const hit=this.tester.at(world,12/this.renderer.zoom);
@@ -158,9 +160,8 @@ export class PointerController {
     if (!wire) return;
     const nearest=this.router.nearestSegment(wire,world);
     if (!nearest) return;
-    const manual=this.router.path(wire).slice(1,-1);
-    manual.splice(nearest.index,0,this.grid(nearest.point));wire.points=manual;
-    this.model.selection={kind:'waypoint',id:wire.id,index:nearest.index};this.commit();
+    if (!this.router.addBend(wire,nearest.point))return;
+    this.model.selection={kind:'wire',id:wire.id};this.commit();
   }
   private wheel(event:WheelEvent):void {event.preventDefault();const screen=this.pos(event).screen;this.renderer.zoomAt(event.deltaY<0?1.12:1/1.12,screen);}
   public cancelPending():void {this.pending=null;this.drag=null;this.renderer.invalidate();}
