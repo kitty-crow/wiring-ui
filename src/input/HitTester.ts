@@ -7,15 +7,15 @@ export type Hit = { kind: 'pin' | 'component' | 'wire' | 'waypoint' | 'anchor' |
 export class HitTester {
   private readonly router: WireRouter;
   public constructor(private readonly model: ProjectModel) {this.router=new WireRouter(model);}
-  public at(point: Point, radius=11): Hit | null {
+  public at(point: Point, radius=11, excludedAnchor?: string): Hit | null {
     for (const component of [...this.model.project.components].reverse()) {
       for (const pin of component.pins) {
         const position=this.model.anchor(pin.id);
-        if (position && pointDistance(position,point)<radius) return {kind:'pin',id:pin.id};
+        if (position && pin.id!==excludedAnchor && pointDistance(position,point)<radius) return {kind:'pin',id:pin.id};
       }
     }
     for (const anchor of this.model.project.anchors) {
-      if (pointDistance(anchor,point)<radius) return {kind:'anchor',id:anchor.id};
+      if (anchor.id!==excludedAnchor && pointDistance(anchor,point)<radius) return {kind:'anchor',id:anchor.id};
     }
     for (const wire of [...this.model.project.wires].reverse()) {
       for (const [index,p] of wire.points.entries()) {
