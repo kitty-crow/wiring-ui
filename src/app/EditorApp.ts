@@ -95,6 +95,9 @@ export class EditorApp {
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-command]'))button.addEventListener('click',()=>this.command(button.dataset.command??''));
     const picker=byId<HTMLSelectElement>('symbol-picker');
     picker.innerHTML=new SymbolLibrary().kinds().map(kind=>'<option value="'+kind+'">'+kind+'</option>').join('');
+    this.pointer.symbol=picker.value as typeof this.pointer.symbol;
+    picker.addEventListener('focus',()=>this.selectTool('symbol'));
+    picker.addEventListener('pointerdown',()=>this.selectTool('symbol'));
     picker.addEventListener('change',()=>{this.pointer.symbol=picker.value as typeof this.pointer.symbol;this.selectTool('symbol');});
     byId<HTMLElement>('hover-add-pin').addEventListener('click',()=>{
       const component=this.hoveredComponentId?this.model.component(this.hoveredComponentId):undefined;
