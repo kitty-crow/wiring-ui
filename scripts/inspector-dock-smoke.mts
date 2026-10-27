@@ -66,6 +66,13 @@ try{
   await mobilePage.locator('#inspector-edge').tap();
   if(await mobilePage.locator('#inspector-panel').getAttribute('aria-hidden')!=='false')
     throw Error('Touch edge tab failed to reveal inspector');
+  await mobilePage.waitForFunction(()=>{
+    const panel=document.querySelector<HTMLElement>('#inspector-panel');
+    const main=document.querySelector<HTMLElement>('#editor-main');
+    if(!panel||!main)return false;
+    const expectedLeft=main.getBoundingClientRect().right-panel.offsetWidth;
+    return Math.abs(panel.getBoundingClientRect().left-expectedLeft)<1;
+  });
   await mobilePage.locator('#inspector-pin').tap();
   if(!await mobilePage.locator('#editor-main').evaluate(node=>node.classList.contains('inspector-pinned')))
     throw Error('Mobile pin did not open lower property section');
