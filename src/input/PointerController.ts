@@ -185,7 +185,8 @@ export class PointerController {
   private spliceMovedSymbol(id:string,at:Point):void {
     const symbol=this.model.project.symbols.find(item=>item.id===id);
     if(!symbol)return;
-    this.placement.place(symbol,at,12/this.renderer.zoom);
+    // Use symbol centre, not mouse release position, to preserve the user's grab offset.
+    this.placement.place(symbol,{x:symbol.x,y:symbol.y},12/this.renderer.zoom);
   }
   private completeMarquee(drag:Drag,end:Point):void {
     this.renderer.marquee=null;
