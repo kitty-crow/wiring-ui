@@ -42,13 +42,13 @@ try {
   // Hover rotation is resolved using world-space component geometry.
   const sonar=await world(215,310);
   await page.mouse.move(sonar.x,sonar.y);
-  await page.keyboard.press('r');
+  await page.keyboard.press('Control+r');
   let project=await save();
   if(project.components.find(c=>c.id==='sonar')?.rotation!==90)throw Error('Hovered R failed to rotate SONAR');
   if((project.components.find(c=>c.id==='moxa')?.rotation??0)!==0)throw Error('Hovered R rotated an unselected device');
-  await page.keyboard.press('Shift+r');
-  await page.keyboard.press('e');
-  await page.keyboard.press('Shift+e');
+  await page.keyboard.press('Control+Shift+r');
+  await page.keyboard.press('Control+e');
+  await page.keyboard.press('Control+Shift+e');
   project=await save();
   const transformed=project.components.find(c=>c.id==='sonar');
   if((transformed?.rotation??0)!==0||!transformed?.mirrorX||!transformed?.mirrorY)throw Error('Hover inverse rotation/mirror modifiers failed');
@@ -62,11 +62,11 @@ try {
   await page.mouse.move(last.x,last.y,{steps:12});
   await page.mouse.up();
   await page.getByText('3 components selected').waitFor();
-  await page.keyboard.press('r');
+  await page.keyboard.press('Control+r');
   project=await save();
   if(!project.components.every(c=>c.rotation===90))throw Error('Group rotation did not affect every selected component');
-  await page.keyboard.press('Shift+r');
-  await page.keyboard.press('e');
+  await page.keyboard.press('Control+Shift+r');
+  await page.keyboard.press('Control+e');
   project=await save();
   if(!project.components.every(c=>c.mirrorX||c.mirrorY))throw Error('Group mirror did not affect each component');
 
