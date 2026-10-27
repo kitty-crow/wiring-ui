@@ -8,6 +8,8 @@ An offline-first, canvas-based electronic wiring diagram editor. Draw component 
 - Automatic orthogonal cable routing anchored to terminals, free ends or reusable junctions. Move a block and its cables follow. Edit bends, drag legs and reconnect cable ends.
 - Non-connected cable crossings are shown with curved jump bridges. True electrical connections use persistent junction nodes.
 - Wire colours, widths, patterns and labels; rectangles, ellipses, lines, editable polylines and polygons.\n- Rotate and mirror components around their centres; wiring terminals and obstacle hit tests follow the transformed geometry.\n- Rectangular marquee and Shift-click selection for editing several devices at once, including group clipboard, rotation, mirrors and deletion.\n- Circuit symbols carry separate reference **Label** and physical **Value** text; an electronics character palette inserts Ω, µ, °, Δ, ± and more into the active text field.
+- Passive two-ended symbols (resistor, capacitor, inductor, diode, LED, fuse and switch) expose two persistent, cable-compatible terminal anchors. Ground, supply and test-point symbols expose their appropriate single terminal.
+- Placing or dragging an unconnected two-ended symbol onto a sufficiently long cable leg inserts it inline: the original wire becomes the input lead and a new styled output lead attaches to the other terminal. The existing cable route and endpoint IDs remain intact outside the insertion. Short segments remain unspliced rather than manufacturing invalid links.
 - Pan, zoom, high-DPI drawing, switchable WebGL2 grid presentation with Canvas2D fallback.
 - Import a PDF's first page or an image as an embedded drawing template.
 - IndexedDB auto-recovery for the most recent project; localStorage for personal settings.
@@ -39,7 +41,7 @@ Use **Block**, then click the drawing to add a device. Select a block to edit it
 - The **Select** tool supports dragging an empty-space rubber-band marquee and Shift-click membership changes. Group transforms use a shared centre; terminal IDs stay attached.
 - Use **Symbol** and choose Resistor, Capacitor, Inductor or another glyph. The right inspector exposes separate **Label** (e.g. `R1`) and **Value** (e.g. `3R3`) fields. They render above and below the symbol.
 - The compact **Characters** rail on the left inserts common electronics and engineering symbols directly at the caret in a focused text field. A field must be active before selecting a character.
-- The standalone HTML and JSON exports retain component orientation, grouped wiring geometry and all symbol values. Older version-1 documents still load.
+- The standalone HTML and JSON exports retain component orientation, grouped wiring geometry and all symbol values. Older version-1 documents still load. Symbols' electrical terminal IDs and cable connections also survive export; old symbol-only projects receive stable new terminals on import.
 
 ## Architecture
 
