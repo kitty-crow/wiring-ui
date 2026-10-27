@@ -28,3 +28,33 @@
   #character-palette button{width:35px;height:34px}
 }
 @media print{#character-palette{display:none!important}}
+
+/* Icon-only tools retain accessible names and native hover/focus titles. */
+.toolbar button.toolbar-action{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 36px;
+  width:36px;
+  height:36px;
+  min-width:36px;
+  min-height:36px;
+  padding:7px;
+}
+.toolbar .toolbar-icon{
+  display:block;
+  width:20px;
+  height:20px;
+  flex:none;
+  pointer-events:none;
+}
+@media(max-width:580px){
+  .toolbar button.toolbar-action{
+    width:34px;
+    min-width:34px;
+    height:34px;
+    min-height:34px;
+    flex-basis:34px;
+    padding:6px;
+  }
+}
