@@ -119,10 +119,7 @@ export class PointerController {
     if (event.button===1||this.tool==='pan') {this.renderer.offset.x+=screen.x-drag.screen.x;this.renderer.offset.y+=screen.y-drag.screen.y;drag.screen=screen;drag.prior=world;this.renderer.invalidate();return;}
     if(drag.marquee) {this.renderer.marquee={start:drag.start,end:world};this.renderer.invalidate();return;}
     if(drag.groupIds.length>1) {
-      for(const id of drag.groupIds) {
-        const component=this.model.component(id);
-        if(component){component.x+=dx;component.y+=dy;}
-      }
+      this.moveGroup(drag.groupIds,dx,dy);
       drag.prior=world;drag.screen=screen;this.model.changed();return;
     }
     let hit=drag.hit;
@@ -148,6 +145,12 @@ export class PointerController {
       shape.points?.forEach(point=>{point.x+=drawing?0:dx;point.y+=drawing?0:dy;});
     }
     drag.prior=world;drag.screen=screen;this.model.changed();
+  }
+  private moveGroup(ids:readonly string[],dx:number,dy:number):void {
+    for(const id of ids) {
+      const component=this.model.component(id);
+      if(component){component.x+=dx;component.y+=dy;}
+    }
   }
   private slideSegment(wire:Wire,index:number,drag:Drag,world:Point):void {
     const a=drag.originalRoute[index];
