@@ -19,7 +19,8 @@ export class EditorCommands {
     private readonly changed: () => void,
     private readonly persisted: () => void,
     private readonly external: (command: EditorCommand) => void,
-    private readonly status: (message: string) => void
+    private readonly status: (message: string) => void,
+    private readonly hoveredComponent:()=>string|null
   ) {
     this.history = new HistoryManager(model.project);
     this.clipboard = new ClipboardService(model);
@@ -40,6 +41,7 @@ export class EditorCommands {
     if (command === 'duplicate') { this.recordWhen(this.clipboard.duplicate()); return; }
     if (command === 'delete') { this.removeSelection(); return; }
     if (command.startsWith('nudge-')) { this.nudge(command, event); return; }
+    if (this.isTransform(command)) {this.transform(command);return;}
     this.external(command);
   }
   public menu(action: ContextAction, point: Point): void {
@@ -97,6 +99,25 @@ export class EditorCommands {
     if (!this.router.addBend(wire,point))return;
     this.model.selection = { kind: 'wire', id: wire.id };
   }
+  private isTransform(command:EditorCommand):command is 'rotate-cw'|'rotate-ccw'|'mirror-horizontal'|'mirror-vertical' {
+    return command==='rotate-cw'||command==='rotate-ccw'||
+      command==='mirror-horizontal'||command==='mirror-vertical';
+  }
+  /** A hovered component wins, unless it belongs to an existing group selection. */
+  private transform(command:'rotate-cw'|'rotate-ccw'|'mirror-horizontal'|'mirror-vertical'):void {
+    const hover=this.hoveredComponent();
+    const selected=this.model.selectedComponents().map(c=>c.id);
+    const group=this.model.selection?.kind==='multi'?selected:[];
+    const ids=group.length>1&&hover&&group.includes(hover)?group:
+      hover?[hover]:selected;
+    if(ids.length===0) {
+      if(command==='rotate-cw')this.external('tool-rectangle');
+      if(command==='mirror-horizontal')this.external('tool-ellipse');
+      return;
+    }
+    this.model.selectComponents(ids);
+    if(this.model.transformComponents(command,ids))this.record();
+  }
   private nudge(command: EditorCommand, event?: KeyboardEvent): void {
     const distance = event?.altKey ? 1 : event?.shiftKey ? 20 : 10;
     const x = command === 'nudge-left' ? -distance : command === 'nudge-right' ? distance : 0;
@@ -114,7 +135,7 @@ export class EditorCommands {
   }
   private isRecordable(command: EditorCommand): boolean {
     return command === 'duplicate' || command === 'delete' ||
-      command === 'paste' || command.startsWith('nudge-') || command === 'grid';
+      command === 'paste' || command.startsWith('nudge-') || command === 'grid' || this.isTransform(command);
   }
   private toggleMacro(): void {
     this.recording = !this.recording;
