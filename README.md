@@ -7,7 +7,7 @@ An offline-first, canvas-based electronic wiring diagram editor. Draw component 
 - Unlimited named and numbered terminals per block; create, edit, reorder by replacing numbers, or remove terminals without deleting the connected cables.
 - Automatic orthogonal cable routing anchored to terminals, free ends or reusable junctions. Move a block and its cables follow. Edit bends, drag legs and reconnect cable ends.
 - Non-connected cable crossings are shown with curved jump bridges. True electrical connections use persistent junction nodes.
-- Wire colours, widths, patterns and labels; rectangles, ellipses, lines, annotations and schematic SVG glyphs.
+- Wire colours, widths, patterns and labels; rectangles, ellipses, lines, editable polylines and polygons.\n- Rotate and mirror components around their centres; wiring terminals and obstacle hit tests follow the transformed geometry.\n- Rectangular marquee and Shift-click selection for editing several devices at once, including group clipboard, rotation, mirrors and deletion.\n- Circuit symbols carry separate reference **Label** and physical **Value** text; an electronics character palette inserts Ω, µ, °, Δ, ± and more into the active text field.
 - Pan, zoom, high-DPI drawing, switchable WebGL2 grid presentation with Canvas2D fallback.
 - Import a PDF's first page or an image as an embedded drawing template.
 - IndexedDB auto-recovery for the most recent project; localStorage for personal settings.
@@ -29,7 +29,17 @@ Open `dist/index.html` directly in Chromium, Firefox or Edge. The finished HTML 
 
 ## Controls
 
-Use **Block**, then click the drawing to add a device. Select a block to edit its name and terminal header in the right panel. Use **Cable**, then click two terminals; clicking empty space creates an unconnected free cable end. Use **Select** to drag blocks, cable waypoints and loose anchors. Double-click a cable to add a bend; drag a cable leg to reposition that segment while keeping endpoints fixed. Use **Junction** and click a crossing to make two intersecting cables electrically connected. Right-hand properties provide style and terminal editing. Use **Pan** or Shift-drag to navigate and the mouse wheel to zoom. Delete/Backspace removes the selected object.
+Use **Block**, then click the drawing to add a device. Select a block to edit its name and terminal header in the right panel. Use **Cable**, then click two terminals; clicking empty space creates an unconnected free cable end. Use **Select** to drag blocks, cable waypoints and loose anchors. Double-click a cable to add a bend; drag a cable leg to reposition that segment while keeping endpoints fixed. Use **Junction** and click a crossing to make two intersecting cables electrically connected. Right-hand properties provide style and terminal editing. Use **Pan** or middle-button drag to navigate and the mouse wheel to zoom. Delete/Backspace removes the selected object. With **Select** active, drag on an empty area to make a rectangular component selection; Shift-click extends or reduces the group.
+
+## Keyboard and electronic symbols
+
+- **R** rotates the hovered or selected component(s) clockwise by 90°. **Shift+R** rotates counter-clockwise.
+- **E** mirrors the target left-right. **Shift+E** mirrors it top-bottom. With no target, plain R/E continue to activate Rectangle/Ellipse.
+- **Ctrl/Cmd+Z** undo; **Ctrl/Cmd+Shift+Z** redo. **Ctrl/Cmd+C/X/V** copy/cut/paste, **Delete** removes the selected group, and arrow keys nudge selected objects.
+- The **Select** tool supports dragging an empty-space rubber-band marquee and Shift-click membership changes. Group transforms use a shared centre; terminal IDs stay attached.
+- Use **Symbol** and choose Resistor, Capacitor, Inductor or another glyph. The right inspector exposes separate **Label** (e.g. `R1`) and **Value** (e.g. `3R3`) fields. They render above and below the symbol.
+- The compact **Characters** rail on the left inserts common electronics and engineering symbols directly at the caret in a focused text field. A field must be active before selecting a character.
+- The standalone HTML and JSON exports retain component orientation, grouped wiring geometry and all symbol values. Older version-1 documents still load.
 
 ## Architecture
 
