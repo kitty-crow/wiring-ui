@@ -7,7 +7,8 @@ import { ProjectStore } from '../storage/ProjectStore';
 import { SettingsStore, type Settings } from '../storage/SettingsStore';
 import { ProjectCodec } from '../io/ProjectCodec';
 import { PdfTemplate } from '../io/PdfTemplate';
-import { createId, componentHeight } from '../model/types';
+import { createId } from '../model/types';
+import { ComponentGeometry } from '../geometry/ComponentGeometry';
 import { SymbolLibrary } from '../symbols/SymbolLibrary';
 import { EditorCommands } from './EditorCommands';
 import { ShortcutController, type EditorCommand } from '../input/ShortcutController';
@@ -112,7 +113,7 @@ export class EditorApp {
     const hover=byId<HTMLElement>('hover-add-pin');
     const bounds=this.sheet.getBoundingClientRect();
     const world=this.renderer.toWorld(event.clientX-bounds.left,event.clientY-bounds.top);
-    const component=this.model.project.components.find(item=>world.x>=item.x&&world.x<=item.x+item.width&&world.y>=item.y&&world.y<=item.y+componentHeight(item));
+    const component=this.model.project.components.find(item=>ComponentGeometry.contains(item,world));
     this.hoveredComponentId=component?.id??null;
     if (!component){hover.hidden=true;return;}
     const position=this.renderer.toScreen({x:component.x+component.width,y:component.y});
