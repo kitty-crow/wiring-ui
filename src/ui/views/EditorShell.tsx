@@ -8,9 +8,6 @@ export function EditorShell() {
   return <>
     <div id="app">
       <header className="topbar">
-        <span className="brand">Wiring UI</span>
-        <span id="document-name" className="document-title">Untitled</span>
-        <span className="spacer" />
         {([
           ['new','New','New drawing (Ctrl/Cmd+N)'],
           ['undo','Undo','Undo (Ctrl/Cmd+Z)'],
@@ -25,6 +22,9 @@ export function EditorShell() {
             className="topbar-action" title={tooltip} aria-label={label}>
             <ToolbarIcon name={command} />
           </button>)}
+        <span className="spacer" />
+        <span className="brand">Wiring UI</span>
+        <span id="document-name" className="document-title">Untitled</span>
       </header>
       <nav className="toolbar" aria-label="Drawing tools">
         {([
