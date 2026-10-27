@@ -64,7 +64,7 @@ export function EditorShell() {
         </select></label>
         <label><input type="checkbox" id="snap" defaultChecked />Snap</label>
         <label><input type="checkbox" id="grid" defaultChecked />Grid</label>
-      </nav>      <main className="main">
+      </nav>      <main className="main" id="editor-main">
         <aside id="character-palette" aria-label="Electronic text characters" />
         <section id="workspace" aria-label="Schematic canvas">
           <canvas id="grid-canvas" aria-hidden="true" />
