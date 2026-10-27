@@ -5,6 +5,7 @@ import { ProjectModel } from '../model/ProjectModel';
 import { CanvasRenderer } from '../render/CanvasRenderer';
 import { PathDrawing } from './PathDrawing';
 import { ComponentGeometry } from '../geometry/ComponentGeometry';
+import { SymbolLibrary } from '../symbols/SymbolLibrary';
 export type Tool = 'select' | 'pan' | 'wire' | 'component' | 'text' | 'rectangle' | 'ellipse' | 'line' | 'polyline' | 'polygon' | 'symbol' | 'junction';
 type Drag = { hit: Hit | null; start: Point; prior: Point; screen: Point; moved: boolean; originalRoute: Point[]; groupIds: string[]; marquee: boolean };
 
@@ -47,7 +48,8 @@ export class PointerController {
     if (this.tool==='component') {this.model.addComponent(this.grid(world));this.commit();this.drag=null;return;}
     if (this.tool==='text') {this.model.project.annotations.push({id:createId(),text:'Annotation',...this.grid(world),size:16,font:'Arial',color:'#182638',bold:false});this.commit();this.drag=null;return;}
     if (this.tool==='symbol') {
-      const item={id:createId(),kind:this.symbol,...this.grid(world),scale:1,rotation:0,color:this.renderer.dark?'#e1e9f2':'#162638',label:''};
+      const count=this.model.project.symbols.filter(item=>item.kind===this.symbol).length+1;
+      const item={id:createId(),kind:this.symbol,...this.grid(world),scale:1,rotation:0,color:this.renderer.dark?'#e1e9f2':'#162638',label:new SymbolLibrary().labelFor(this.symbol,count),value:''};
       this.model.project.symbols.push(item);
       this.model.selection={kind:'symbol',id:item.id};
       this.model.changed();this.commit();this.drag=null;return;
