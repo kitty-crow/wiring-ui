@@ -19,7 +19,7 @@ export class InspectorDock {
     this.pin=this.byId<HTMLButtonElement>('inspector-pin');
     this.pinned=initiallyPinned;
     this.pin.addEventListener('click',()=>this.togglePin());
-    this.edge.addEventListener('pointerenter',()=>this.show());
+    this.edge.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')this.show();});
     this.edge.addEventListener('click',()=>this.show());
     this.main.addEventListener('pointermove',event=>this.pointerMove(event));
     this.main.addEventListener('pointerleave',()=>this.hide());
