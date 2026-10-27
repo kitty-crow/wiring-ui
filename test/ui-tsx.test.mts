@@ -74,3 +74,27 @@ test('TSX help, glyph palette and context menus expose class-owned DOM hooks',()
   expect(menu).toContain('data-action="remove-bend"');
   expect(menu).toContain('role="menuitem"');
 });
+
+test('drawing toolbar exposes descriptive SVG icons and accessible hover tooltips',()=>{
+  const html=render2Mkup(createElement(EditorShell));
+  const iconOnlyTools=[
+    'select','pan','wire','junction','component','text','rectangle','ellipse',
+    'line','polyline','polygon','symbol'
+  ];
+  const iconOnlyCommands=['pdf','remove-template','fit','shortcuts'];
+  for(const [attribute,names] of [
+    ['data-tool',iconOnlyTools],['data-command',iconOnlyCommands]
+  ] as const){
+    for(const name of names){
+      const opening=new RegExp('<button\\\\b[^>]*'+attribute+'="'+name+'"[^>]*>').exec(html)?.[0];
+      expect(opening).toBeDefined();
+      expect(opening).toContain('aria-label="');
+      expect(opening).toContain('title="');
+      const offset=html.indexOf(opening??'__absent__');
+      expect(html.slice(offset+opening!.length,offset+opening!.length+220))
+        .toContain('<svg');
+    }
+  }
+  expect(html).toContain('id="symbol-picker"');
+  expect(html).toContain('aria-label="Choose schematic symbol"');
+});
