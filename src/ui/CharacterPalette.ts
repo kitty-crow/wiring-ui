@@ -1,10 +1,14 @@
+import { createElement } from 'react';
+import { replaceChildrenWithReact } from './reactHelpers';
+import { CharacterPaletteView, type PaletteGlyph } from './views/CharacterPaletteView';
+
 /**
  * Small reusable character picker. Focus is deliberately retained on the field
  * rather than stolen by the palette button, and insertion respects text selection.
  */
 export class CharacterPalette {
   private target:HTMLInputElement|HTMLTextAreaElement|null=null;
-  private readonly glyphs:readonly {symbol:string;name:string}[]=[
+  private readonly glyphs:readonly PaletteGlyph[]=[
     {symbol:'Ω',name:'Ohm'},{symbol:'µ',name:'Micro'},{symbol:'°',name:'Degrees'},
     {symbol:'±',name:'Plus or minus'},{symbol:'Δ',name:'Delta'},
     {symbol:'λ',name:'Lambda'},{symbol:'Φ',name:'Phi'},{symbol:'π',name:'Pi'},
@@ -31,16 +35,7 @@ export class CharacterPalette {
     field.focus();
   }
   private build():void {
-    this.root.replaceChildren();
-    const heading=document.createElement('div');
-    heading.className='character-palette-title';heading.textContent='Characters';
-    this.root.append(heading);
-    for(const glyph of this.glyphs) {
-      const button=document.createElement('button');
-      button.type='button';button.textContent=glyph.symbol;button.title=glyph.name;
-      button.dataset.glyph=glyph.symbol;button.setAttribute('aria-label','Insert '+glyph.name);
-      this.root.append(button);
-    }
+    replaceChildrenWithReact(this.root,createElement(CharacterPaletteView,{glyphs:this.glyphs}));
   }
   private capture(event:FocusEvent):void {
     const target=event.target;
