@@ -76,12 +76,19 @@ test('old version-one drawings load without rotation, mirror or symbol value fie
   loaded.symbols[0]!.value='3R3 Ω';
   expect(codec.parse(codec.encode(loaded)).symbols[0]?.value).toBe('3R3 Ω');
 });
-test('R and E correctly honour shift without interfering with modifiers',()=>{
-  const press=(key:string,shift=false)=>ShortcutController.resolve({key,shiftKey:shift,ctrlKey:false,metaKey:false,altKey:false});
-  expect(press('r')).toBe('rotate-cw');
-  expect(press('R',true)).toBe('rotate-ccw');
-  expect(press('e')).toBe('mirror-horizontal');
-  expect(press('E',true)).toBe('mirror-vertical');
+test('R/E use drawing tools and Ctrl/Cmd modifiers target rotations and mirrors',()=>{
+  const press=(key:string,shift=false,ctrl=false,meta=false)=>
+    ShortcutController.resolve({key,shiftKey:shift,ctrlKey:ctrl,metaKey:meta,altKey:false});
+  expect(press('r')).toBe('tool-rectangle');
+  expect(press('e')).toBe('tool-ellipse');
+  expect(press('R',true)).toBeNull();
+  expect(press('E',true)).toBeNull();
+  for (const [ctrl,meta] of [[true,false],[false,true]]) {
+    expect(press('r',false,ctrl,meta)).toBe('rotate-cw');
+    expect(press('R',true,ctrl,meta)).toBe('rotate-ccw');
+    expect(press('e',false,ctrl,meta)).toBe('mirror-horizontal');
+    expect(press('E',true,ctrl,meta)).toBe('mirror-vertical');
+  }
 });
 
 test('internal manual cable waypoints rotate and mirror together with selected devices',()=>{
