@@ -43,6 +43,18 @@ Use **Block**, then click the drawing to add a device. Select a block to edit it
 - The compact **Characters** rail on the left inserts common electronics and engineering symbols directly at the caret in a focused text field. A field must be active before selecting a character.
 - The standalone HTML and JSON exports retain component orientation, grouped wiring geometry and all symbol values. Older version-1 documents still load. Symbols' electrical terminal IDs and cable connections also survive export; old symbol-only projects receive stable new terminals on import.
 
+## TSX view architecture
+
+The interface now uses the same `reactHelpers` **static TSX-to-HTML** pattern as
+`kitty-crow/tracker-viewer`. TSX views describe the shell, inspector, context menus,
+shortcut reference, symbol picker and engineering-character palette. React renders
+escaped static markup only; it does **not** manage state or application events.
+The existing OOP TypeScript controllers retain event delegation, canvas rendering,
+undo/redo, geometry and IndexedDB persistence.
+
+The build renders the TSX shell into the standalone, fully inlined GitHub Pages HTML.
+See [TSX markup design](docs/tsx-markup.md).
+
 ## Architecture
 
 `src/model` is serialisable domain state, `src/geometry` routes and computes crossing geometry, `src/input` handles hit tests and pointer interaction, `src/render` owns canvas drawing and GPU grid, `src/symbols` owns reusable SVG path definitions, `src/ui` edits properties, `src/io` owns imports and exports, `src/storage` holds persistence, and `src/app` wires the services together. No application state is stored in external dependencies or remote services.
