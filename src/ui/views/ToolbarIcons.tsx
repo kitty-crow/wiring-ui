@@ -7,7 +7,8 @@ import type { ReactNode } from 'react';
 export type ToolbarIconName =
   | 'select' | 'pan' | 'wire' | 'junction' | 'component' | 'text'
   | 'rectangle' | 'ellipse' | 'line' | 'polyline' | 'polygon' | 'symbol'
-  | 'pdf' | 'remove-template' | 'fit' | 'shortcuts';
+  | 'pdf' | 'remove-template' | 'fit' | 'shortcuts'
+  | 'new' | 'undo' | 'redo' | 'open' | 'json' | 'html' | 'png' | 'print';
 
 const shapes: Record<ToolbarIconName, ReactNode> = {
   select: <path d="m5 3 13 9-6.4 1.2L9 20 5 3Z M12 13l4 7"/>,
@@ -25,7 +26,15 @@ const shapes: Record<ToolbarIconName, ReactNode> = {
   pdf: <><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/><path d="M5 7h3m-3 4h2"/></>,
   'remove-template': <><path d="M6 3h9l4 4v13H6Z M15 3v5h4"/><path d="m9 12 7 7m0-7-7 7"/></>,
   fit: <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M3 8l5-5m8 0 5 5M3 16l5 5m8 0 5-5"/>,
-  shortcuts: <><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h1m3 0h1m3 0h1m3 0h1M6 13h1m3 0h1m3 0h1m3 0h1M8 16h8"/></>
+  shortcuts: <><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h1m3 0h1m3 0h1m3 0h1M6 13h1m3 0h1m3 0h1m3 0h1M8 16h8"/></>,
+  new: <><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="M12 11v7m-3.5-3.5h7"/></>,
+  undo: <><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-2"/></>,
+  redo: <><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h2"/></>,
+  open: <><path d="M3 8V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M3 11h18l-3 10H6z"/></>,
+  json: <><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="m10 12-2 2 2 2m4-4 2 2-2 2"/></>,
+  html: <><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="m10 12-2 2 2 2m4-4 2 2-2 2"/></>,
+  png: <><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5.5-5.5 3.5 3.5 2.5-2.5L20 18"/></>,
+  print: <><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6zM18 12h.01"/></>
 };
 
 export function ToolbarIcon({name}:{name:ToolbarIconName}) {
