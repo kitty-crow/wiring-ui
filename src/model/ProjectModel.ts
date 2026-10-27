@@ -55,11 +55,16 @@ export class ProjectModel {
     const boxes=components.map(c=>ComponentGeometry.bounds(c));
     const mid={x:(Math.min(...boxes.map(b=>b.left))+Math.max(...boxes.map(b=>b.right)))/2,
       y:(Math.min(...boxes.map(b=>b.top))+Math.max(...boxes.map(b=>b.bottom)))/2};
+    const terminals=new Set(components.flatMap(item=>item.pins.map(pin=>pin.id)));
     for(const c of components) {
       if(action==='rotate-cw')ComponentGeometry.rotate(c,true,mid);
       if(action==='rotate-ccw')ComponentGeometry.rotate(c,false,mid);
       if(action==='mirror-horizontal')ComponentGeometry.mirror(c,'horizontal',mid);
       if(action==='mirror-vertical')ComponentGeometry.mirror(c,'vertical',mid);
+    }
+    for(const wire of this.state.wires) {
+      if(!terminals.has(wire.from)||!terminals.has(wire.to))continue;
+      wire.points=wire.points.map(point=>ComponentGeometry.transformPoint(point,action,mid));
     }
     this.changed();return true;
   }
