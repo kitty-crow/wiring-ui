@@ -45,6 +45,10 @@ export class InspectorDock {
   private pointerMove(event:PointerEvent):void {
     if(this.pinned||event.pointerType==='touch')return;
     if(event.clientX>=window.innerWidth-20){this.show();return;}
+    // During the slide-in animation the visual panel has not reached its final
+    // x-position. Keep the reveal corridor open so entering it cannot close the dock.
+    const expectedLeft=this.main.getBoundingClientRect().right-this.panel.offsetWidth;
+    if(this.opened&&event.clientX>=expectedLeft)return;
     if(this.panel.contains(event.target as Node))return;
     this.hide();
   }
