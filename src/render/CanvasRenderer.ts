@@ -165,19 +165,29 @@ export class CanvasRenderer {
     ctx.fillRect(component.x,component.y,component.width,height);ctx.strokeRect(component.x,component.y,component.width,height);
     ctx.fillStyle = this.dark ? '#25344a' : '#f0f4f8';ctx.fillRect(component.x+1,component.y+1,component.width-2,58);
     ctx.beginPath();ctx.moveTo(component.x,component.y+59);ctx.lineTo(component.x+component.width,component.y+59);ctx.stroke();
-    ctx.fillStyle=ink;ctx.textAlign='center';ctx.font='bold 17px Arial';ctx.fillText(component.name,component.x+component.width/2,component.y+25,component.width-15);
-    ctx.font='12px Arial';ctx.fillText(component.detail,component.x+component.width/2,component.y+45,component.width-12);
-    ctx.font='13px Arial';
+    ctx.fillStyle=ink;
+    this.deviceText(ctx,component,component.name,component.x+component.width/2,component.y+25,'bold 17px Arial',component.width-15);
+    this.deviceText(ctx,component,component.detail,component.x+component.width/2,component.y+45,'12px Arial',component.width-12);
     component.pins.forEach((pin,index)=>{
       const y=component.y+83+index*31;const x=pin.side==='right'?component.x+component.width:component.x;
       ctx.strokeStyle=this.dark?'#5e7086':'#c9d3e0';ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(component.x+10,y+14);ctx.lineTo(component.x+component.width-10,y+14);ctx.stroke();
-      ctx.fillStyle=ink;ctx.textAlign=pin.side==='right'?'left':'right';
-      const textX=pin.side==='right'?component.x+16:component.x+component.width-16;
-      ctx.fillText(pin.number+'   '+pin.label,textX,y+5,component.width-30);
+      ctx.fillStyle=ink;
+      this.deviceText(ctx,component,pin.number+'   '+pin.label,component.x+component.width/2,y+5,'13px Arial',component.width-30);
       ctx.fillStyle=paper;ctx.strokeStyle=ink;ctx.lineWidth=1.7;
       ctx.beginPath();ctx.arc(x,y,6.5,0,Math.PI*2);ctx.fill();ctx.stroke();
       ctx.beginPath();ctx.moveTo(x-3,y);ctx.lineTo(x+3,y);ctx.stroke();
     });ctx.restore();
   }
+  /** Keep all terminal and device text legible instead of mirrored/backwards. */
+  private deviceText(ctx:CanvasRenderingContext2D,component:Component,value:string,x:number,y:number,font:string,maxWidth:number):void {
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(component.mirrorX?-1:1,component.mirrorY?-1:1);
+    ctx.rotate(-ComponentGeometry.rotation(component)*Math.PI/180);
+    ctx.font=font;ctx.textAlign='center';
+    ctx.fillText(value,0,0,maxWidth);
+    ctx.restore();
+  }
+
 }
