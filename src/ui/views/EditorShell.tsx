@@ -1,3 +1,4 @@
+import { ToolbarIcon } from './ToolbarIcons';
 /**
  * Build-time TSX page shell. No React hydration or runtime root is installed.
  * IDs and data-* hooks match EditorApp; its existing imperative event delegation
@@ -21,28 +22,43 @@ export function EditorShell() {
       </header>
       <nav className="toolbar" aria-label="Drawing tools">
         {([
-          ['select','Select'],['pan','Pan'],['wire','Cable'],['junction','Junction'],
-          ['component','Block'],['text','Text'],['rectangle','Rectangle'],
-          ['ellipse','Ellipse'],['line','Line'],['polyline','Polyline'],['polygon','Polygon'],
-          ['symbol','Symbol']
-        ] as const).map(([tool,label])=>
-          <button key={tool} data-tool={tool} className={tool==='select'?'active':undefined}
-            title={tool==='polyline'||tool==='polygon'?'Click vertices, double-click to finish':undefined}>
-            {label}
+          ['select','Select','Select and marquee-select (V)'],
+          ['pan','Pan','Pan canvas (H)'],
+          ['wire','Cable','Draw a cable (W)'],
+          ['junction','Junction','Create a junction (J)'],
+          ['component','Block','Place a component (B)'],
+          ['text','Text','Place text (T)'],
+          ['rectangle','Rectangle','Draw a rectangle (R)'],
+          ['ellipse','Ellipse','Draw an ellipse (E)'],
+          ['line','Line','Draw a line (L)'],
+          ['polyline','Polyline','Click vertices; double-click to finish (Q)'],
+          ['polygon','Polygon','Click vertices; double-click to close (P)'],
+          ['symbol','Symbol','Place a circuit symbol (S)']
+        ] as const).map(([tool,label,tooltip])=>
+          <button key={tool} type="button" data-tool={tool}
+            className={'toolbar-action'+(tool==='select'?' active':'')}
+            title={tooltip} aria-label={label}>
+            <ToolbarIcon name={tool} />
           </button>)}
-        <select id="symbol-picker" aria-label="Choose schematic symbol" />
-        <button data-command="pdf">Import template</button>
-        <button data-command="remove-template">Remove template</button>
-        <button data-command="fit">Fit</button>
-        <button data-command="shortcuts" title="Keyboard shortcuts (?)">Shortcuts</button>
+        <select id="symbol-picker" title="Choose schematic symbol"
+          aria-label="Choose schematic symbol" />
+        {([
+          ['pdf','Import template','Import a PDF or image template'],
+          ['remove-template','Remove template','Remove the background template'],
+          ['fit','Fit','Fit the schematic to the canvas (F)'],
+          ['shortcuts','Shortcuts','View keyboard shortcuts (?)']
+        ] as const).map(([command,label,tooltip])=>
+          <button key={command} type="button" data-command={command}
+            className="toolbar-action" title={tooltip} aria-label={label}>
+            <ToolbarIcon name={command} />
+          </button>)}
         <span className="spacer" />
         <label>Theme <select id="theme">
           <option value="light">Light</option><option value="dark">Dark</option>
         </select></label>
         <label><input type="checkbox" id="snap" defaultChecked />Snap</label>
         <label><input type="checkbox" id="grid" defaultChecked />Grid</label>
-      </nav>
-      <main className="main">
+      </nav>      <main className="main">
         <aside id="character-palette" aria-label="Electronic text characters" />
         <section id="workspace" aria-label="Schematic canvas">
           <canvas id="grid-canvas" aria-hidden="true" />
