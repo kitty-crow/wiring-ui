@@ -5,7 +5,8 @@ export type EditorCommand =
   | 'tool-select' | 'tool-pan' | 'tool-wire' | 'tool-component' | 'tool-junction'
   | 'tool-text' | 'tool-symbol' | 'tool-rectangle' | 'tool-ellipse' | 'tool-line' | 'tool-polyline' | 'tool-polygon'
   | 'grid' | 'shortcuts' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right'
-  | 'macro-toggle' | 'macro-play' | 'context-menu';
+  | 'macro-toggle' | 'macro-play' | 'context-menu'
+  | 'rotate-cw' | 'rotate-ccw' | 'mirror-horizontal' | 'mirror-vertical';
 
 export class ShortcutController {
   public constructor(private readonly dispatch: (command: EditorCommand, event: KeyboardEvent) => void) {
@@ -41,11 +42,12 @@ export class ShortcutController {
     if (key === 'arrowleft') return 'nudge-left';
     if (key === 'arrowright') return 'nudge-right';
     if (key === '?' || (key === '/' && event.shiftKey)) return 'shortcuts';
+    if (key === 'r') return event.shiftKey ? 'rotate-ccw' : 'rotate-cw';
+    if (key === 'e') return event.shiftKey ? 'mirror-vertical' : 'mirror-horizontal';
     if (event.shiftKey) return null;
     const tools: Readonly<Record<string, EditorCommand>> = {
       v: 'tool-select', h: 'tool-pan', w: 'tool-wire', b: 'tool-component',
-      j: 'tool-junction', t: 'tool-text', s: 'tool-symbol', r: 'tool-rectangle',
-      e: 'tool-ellipse', l: 'tool-line', p: 'tool-polygon', q: 'tool-polyline', g: 'grid', f: 'fit'
+      j: 'tool-junction', t: 'tool-text', s: 'tool-symbol',  l: 'tool-line', p: 'tool-polygon', q: 'tool-polyline', g: 'grid', f: 'fit'
     };
     return tools[key] ?? null;
   }
