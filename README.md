@@ -35,8 +35,8 @@ Use **Block**, then click the drawing to add a device. Select a block to edit it
 
 ## Keyboard and electronic symbols
 
-- **R** rotates the hovered or selected component(s) clockwise by 90°. **Shift+R** rotates counter-clockwise.
-- **E** mirrors the target left-right. **Shift+E** mirrors it top-bottom. With no target, plain R/E continue to activate Rectangle/Ellipse.
+- **Ctrl/Cmd+R** rotates hovered or selected component(s) clockwise by 90°. **Ctrl/Cmd+Shift+R** rotates counter-clockwise.
+- **Ctrl/Cmd+E** mirrors the target left-right. **Ctrl/Cmd+Shift+E** mirrors it top-bottom. Plain **R** and **E** always activate Rectangle and Ellipse.
 - **Ctrl/Cmd+Z** undo; **Ctrl/Cmd+Shift+Z** redo. **Ctrl/Cmd+C/X/V** copy/cut/paste, **Delete** removes the selected group, and arrow keys nudge selected objects.
 - The **Select** tool supports dragging an empty-space rubber-band marquee and Shift-click membership changes. Group transforms use a shared centre; terminal IDs stay attached.
 - Use **Symbol** and choose Resistor, Capacitor, Inductor or another glyph. The right inspector exposes separate **Label** (e.g. `R1`) and **Value** (e.g. `3R3`) fields. They render above and below the symbol.
