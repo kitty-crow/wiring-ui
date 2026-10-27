@@ -123,3 +123,18 @@ test('document topbar uses SVG icons and tooltip labels for all eight actions',(
     expect(children).toContain('aria-hidden="true"');
   }
 });
+
+test('document actions precede the right-aligned brand and document title',()=>{
+  const html=render2Mkup(createElement(EditorShell));
+  const header=html.slice(html.indexOf('<header class="topbar">'),html.indexOf('</header>'));
+  const commands=['new','undo','redo','open','json','html','png','print'];
+  const positions=commands.map(command=>header.indexOf('data-command="'+command+'"'));
+  expect(positions.every(position=>position>=0)).toBe(true);
+  expect(positions).toEqual([...positions].sort((a,b)=>a-b));
+  const spacer=header.lastIndexOf('class="spacer"');
+  const brand=header.indexOf('class="brand"');
+  const document=header.indexOf('id="document-name"');
+  expect(positions.at(-1)??-1).toBeLessThan(spacer);
+  expect(spacer).toBeLessThan(brand);
+  expect(brand).toBeLessThan(document);
+});
