@@ -1,3 +1,6 @@
+import { createElement } from 'react';
+import { replaceChildrenWithReact } from '../ui/reactHelpers';
+import { SymbolPickerView } from '../ui/views/SymbolPickerView';
 import { DemoProject } from '../model/DemoProject';
 import { ProjectModel } from '../model/ProjectModel';
 import { CanvasRenderer } from '../render/CanvasRenderer';
@@ -97,7 +100,7 @@ export class EditorApp {
     }
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-command]'))button.addEventListener('click',()=>this.command(button.dataset.command??''));
     const picker=byId<HTMLSelectElement>('symbol-picker');
-    picker.innerHTML=new SymbolLibrary().kinds().map(kind=>'<option value="'+kind+'">'+kind+'</option>').join('');
+    replaceChildrenWithReact(picker, createElement(SymbolPickerView,{kinds:new SymbolLibrary().kinds()}));
     this.pointer.symbol=picker.value as typeof this.pointer.symbol;
     picker.addEventListener('focus',()=>this.selectTool('symbol'));
     picker.addEventListener('pointerdown',()=>this.selectTool('symbol'));
