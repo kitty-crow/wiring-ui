@@ -26,10 +26,7 @@ export class SymbolPlacement {
   public place(symbol:SymbolInstance,at:Point,tolerance:number):boolean {
     SymbolGeometry.ensure(this.model.project);
     const insertion=this.find(symbol,at,tolerance);
-    if(!insertion) {
-      symbol.x=at.x;symbol.y=at.y;
-      this.model.changed();return false;
-    }
+    if(!insertion)return false;
     symbol.x=insertion.centre.x;symbol.y=insertion.centre.y;
     symbol.rotation=insertion.rotation;
     const terminals=SymbolGeometry.terminals(symbol);
