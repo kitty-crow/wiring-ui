@@ -147,9 +147,12 @@ export class PointerController {
     drag.prior=world;drag.screen=screen;this.model.changed();
   }
   private moveGroup(ids:readonly string[],dx:number,dy:number):void {
-    for(const id of ids) {
-      const component=this.model.component(id);
-      if(component){component.x+=dx;component.y+=dy;}
+    const selected=this.model.project.components.filter(c=>ids.includes(c.id));
+    const terminals=new Set(selected.flatMap(c=>c.pins.map(pin=>pin.id)));
+    for(const component of selected){component.x+=dx;component.y+=dy;}
+    for(const wire of this.model.project.wires) {
+      if(!terminals.has(wire.from)||!terminals.has(wire.to))continue;
+      for(const point of wire.points){point.x+=dx;point.y+=dy;}
     }
   }
   private slideSegment(wire:Wire,index:number,drag:Drag,world:Point):void {
