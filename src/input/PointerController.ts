@@ -4,8 +4,9 @@ import { createId, type Point, type Wire, type SymbolKind, type ShapeKind } from
 import { ProjectModel } from '../model/ProjectModel';
 import { CanvasRenderer } from '../render/CanvasRenderer';
 import { PathDrawing } from './PathDrawing';
+import { ComponentGeometry } from '../geometry/ComponentGeometry';
 export type Tool = 'select' | 'pan' | 'wire' | 'component' | 'text' | 'rectangle' | 'ellipse' | 'line' | 'polyline' | 'polygon' | 'symbol' | 'junction';
-type Drag = { hit: Hit | null; start: Point; prior: Point; screen: Point; moved: boolean; originalRoute: Point[] };
+type Drag = { hit: Hit | null; start: Point; prior: Point; screen: Point; moved: boolean; originalRoute: Point[]; groupIds: string[]; marquee: boolean };
 
 /** Pointer input: moving components never modifies endpoint IDs; wire routes follow them. */
 export class PointerController {
@@ -38,9 +39,9 @@ export class PointerController {
     if (event.button===0) this.canvas.focus();
     const {screen,world}=this.pos(event);
     const hit=this.tester.at(world,11/this.renderer.zoom);
-    this.drag={hit,start:world,prior:world,screen,moved:false,originalRoute:[]};
+    this.drag={hit,start:world,prior:world,screen,moved:false,originalRoute:[],groupIds:[],marquee:false};
     this.canvas.setPointerCapture(event.pointerId);
-    if (event.button===1||event.shiftKey||this.tool==='pan') return;
+    if (event.button===1||this.tool==='pan') return;
     if (this.tool==='wire') {this.wireClick(world,hit);this.drag=null;return;}
     if (this.tool==='junction') {this.joinAt(world,hit);this.drag=null;return;}
     if (this.tool==='component') {this.model.addComponent(this.grid(world));this.commit();this.drag=null;return;}
@@ -57,8 +58,27 @@ export class PointerController {
     if (this.tool==='rectangle'||this.tool==='ellipse'||this.tool==='line') {this.startShape(world,this.tool);return;}
     const wire=hit?.kind==='segment'?this.model.project.wires.find(item=>item.id===hit.id):undefined;
     if (wire&&this.drag)this.drag.originalRoute=this.router.path(wire);
-    const kind=hit?.kind==='segment'?'wire':hit?.kind==='pin'?'anchor':hit?.kind;
-    this.model.selection=hit&&kind?(hit.index===undefined?{kind,id:hit.id}:{kind,id:hit.id,index:hit.index}):null;
+    this.beginSelection(hit,event.shiftKey,world);
+  }
+  /** Empty-space drag begins a marquee; Shift-click extends the component set. */
+  private beginSelection(hit:Hit|null,extend:boolean,point:Point):void {
+    const drag=this.drag;
+    if(!drag)return;
+    const old=this.model.selectedComponents().map(c=>c.id);
+    if(this.tool==='select'&&!hit) {
+      drag.marquee=true;
+      this.renderer.marquee={start:point,end:point};
+      this.model.selection=null;this.model.changed();return;
+    }
+    const keep=hit?.kind==='component'&&old.includes(hit.id)&&old.length>1;
+    if(keep)drag.groupIds=old;
+    if(hit?.kind==='component'&&extend) {
+      this.model.selectComponents(old.includes(hit.id)?old.filter(id=>id!==hit.id):[...old,hit.id]);return;
+    }
+    if(!keep) {
+      const kind=hit?.kind==='segment'?'wire':hit?.kind==='pin'?'anchor':hit?.kind;
+      this.model.selection=hit&&kind?(hit.index===undefined?{kind,id:hit.id}:{kind,id:hit.id,index:hit.index}):null;
+    }
     this.model.changed();
   }
   private startShape(point:Point, kind:ShapeKind): void {
@@ -94,7 +114,15 @@ export class PointerController {
     const {screen,world}=this.pos(event);const dx=world.x-drag.prior.x;const dy=world.y-drag.prior.y;
     drag.moved=drag.moved||Math.hypot(screen.x-drag.screen.x,screen.y-drag.screen.y)>2;
     if (event.buttons===0) return;
-    if (event.button===1||event.shiftKey||this.tool==='pan') {this.renderer.offset.x+=screen.x-drag.screen.x;this.renderer.offset.y+=screen.y-drag.screen.y;drag.screen=screen;drag.prior=world;this.renderer.invalidate();return;}
+    if (event.button===1||this.tool==='pan') {this.renderer.offset.x+=screen.x-drag.screen.x;this.renderer.offset.y+=screen.y-drag.screen.y;drag.screen=screen;drag.prior=world;this.renderer.invalidate();return;}
+    if(drag.marquee) {this.renderer.marquee={start:drag.start,end:world};this.renderer.invalidate();return;}
+    if(drag.groupIds.length>1) {
+      for(const id of drag.groupIds) {
+        const component=this.model.component(id);
+        if(component){component.x+=dx;component.y+=dy;}
+      }
+      drag.prior=world;drag.screen=screen;this.model.changed();return;
+    }
     let hit=drag.hit;
     if (!hit) return;
     if (hit.kind==='pin' && drag.moved) hit=this.pullPin(hit,drag);
@@ -130,6 +158,7 @@ export class PointerController {
   private up(event:PointerEvent):void {
     const drag=this.drag;this.drag=null;
     if (this.canvas.hasPointerCapture(event.pointerId))this.canvas.releasePointerCapture(event.pointerId);
+    if(drag?.marquee) {this.completeMarquee(drag,this.pos(event).world);return;}
     if (!drag||!drag.moved) return;
     const {world}=this.pos(event);const target=this.tester.at(world,12/this.renderer.zoom,drag.hit?.id);
     const hit=drag.hit;
@@ -137,6 +166,17 @@ export class PointerController {
     if (hit?.kind==='anchor' && (target?.kind==='pin'||target?.kind==='anchor') && hit.id!==target.id)
       this.model.connectAnchor(hit.id,target.id);
     this.commit();
+  }
+  private completeMarquee(drag:Drag,end:Point):void {
+    this.renderer.marquee=null;
+    const x0=Math.min(drag.start.x,end.x),x1=Math.max(drag.start.x,end.x);
+    const y0=Math.min(drag.start.y,end.y),y1=Math.max(drag.start.y,end.y);
+    if(!drag.moved){this.model.selection=null;this.model.changed();return;}
+    const ids=this.model.project.components.filter(component=>{
+      const box=ComponentGeometry.bounds(component);
+      return box.right>=x0&&box.left<=x1&&box.bottom>=y0&&box.top<=y1;
+    }).map(component=>component.id);
+    this.model.selectComponents(ids);
   }
   private pullPin(hit:Hit,drag:Drag):Hit {
     const current=this.model.anchor(hit.id);
@@ -175,6 +215,6 @@ export class PointerController {
     this.model.selection={kind:'wire',id:wire.id};this.commit();
   }
   private wheel(event:WheelEvent):void {event.preventDefault();const screen=this.pos(event).screen;this.renderer.zoomAt(event.deltaY<0?1.12:1/1.12,screen);}
-  public cancelPending():void {this.paths.cancel();this.pending=null;this.drag=null;this.renderer.invalidate();}
+  public cancelPending():void {this.paths.cancel();this.pending=null;this.drag=null;this.renderer.marquee=null;this.renderer.invalidate();}
   private cancel():void {this.cancelPending();}
 }
