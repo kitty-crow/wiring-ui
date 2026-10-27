@@ -110,13 +110,9 @@ export class EditorCommands {
     const group=this.model.selection?.kind==='multi'?selected:[];
     const ids=group.length>1&&hover&&group.includes(hover)?group:
       hover?[hover]:selected;
-    if(ids.length===0){this.fallbackTransform(command);return;}
+    if(ids.length===0)return;
     this.model.selectComponents(ids);
     if(this.model.transformComponents(command,ids))this.record();
-  }
-  private fallbackTransform(command:'rotate-cw'|'rotate-ccw'|'mirror-horizontal'|'mirror-vertical'):void {
-    if(command==='rotate-cw')this.external('tool-rectangle');
-    if(command==='mirror-horizontal')this.external('tool-ellipse');
   }
   private nudge(command: EditorCommand, event?: KeyboardEvent): void {
     const distance = event?.altKey ? 1 : event?.shiftKey ? 20 : 10;
