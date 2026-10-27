@@ -2,6 +2,7 @@ import { createId, pointDistance, type Point, type SymbolInstance, type Wire } f
 import { ProjectModel } from '../model/ProjectModel';
 import { WireRouter } from '../geometry/WireRouter';
 import { SymbolGeometry } from '../symbols/SymbolGeometry';
+import { OrthogonalGeometry } from '../geometry/OrthogonalGeometry';
 
 interface Insertion {
   wire:Wire;
@@ -56,7 +57,8 @@ export class SymbolPlacement {
     const separation=SymbolGeometry.halfSpan(symbol.kind)*symbol.scale;
     let best:Insertion|null=null;
     for(const wire of this.model.project.wires) {
-      const route=this.router.path(wire);
+      // Collinear manual waypoints must not prevent inserting at a cable midpoint.
+      const route=OrthogonalGeometry.normalise(this.router.path(wire));
       for(let index=0;index<route.length-1;index++){
         const a=route[index],b=route[index+1];
         if(!a||!b)continue;
