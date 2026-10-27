@@ -22,7 +22,7 @@ export class InspectorDock {
     this.edge.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')this.show();});
     this.edge.addEventListener('click',()=>this.show());
     this.main.addEventListener('pointermove',event=>this.pointerMove(event));
-    this.main.addEventListener('pointerleave',()=>this.hide());
+    this.main.addEventListener('pointerleave',event=>{if(event.pointerType!=='touch')this.hide();});
     document.addEventListener('pointerdown',event=>this.dismissOutside(event));
     document.addEventListener('keydown',event=>this.keydown(event));
     this.render();
