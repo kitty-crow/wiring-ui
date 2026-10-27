@@ -1,5 +1,6 @@
 import { ProjectModel } from '../model/ProjectModel';
 import { type Component, type Project, type Selection, type Wire } from '../model/types';
+import { ClipboardService } from '../model/ClipboardService';
 
 const escape=(value:string):string=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const field=(label:string,key:string,value:string,type='text'):string=>'<label class="field"><span>'+label+'</span><input data-key="'+key+'" type="'+type+'" value="'+escape(value)+'"></label>';
@@ -107,13 +108,17 @@ export class Inspector {
     const action=target.dataset.action;
     if(action==='apply-colour')this.applyColour();
     if(action==='delete')this.model.removeSelected();
-    if(action==='duplicate')this.model.duplicateSelected();
+    if(action==='duplicate')this.duplicate();
     if(action==='add-pin')this.addSelectedPin();
     if(action==='add-bend')this.addBend();
     if(action==='remove-bend')this.removeBend();
     if(action==='reset-route')this.resetRoute();
     if(action==='detach-from'||action==='detach-to')this.detach(action==='detach-from'?'from':'to');
     this.record();
+  }
+  private duplicate():void {
+    if(this.model.selection?.kind==='multi'){new ClipboardService(this.model).duplicate();return;}
+    this.model.duplicateSelected();
   }
   private selectedComponent():Component|undefined {
     const selected=this.model.selection;
