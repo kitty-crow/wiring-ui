@@ -18,6 +18,7 @@ import { ShortcutController, type EditorCommand } from '../input/ShortcutControl
 import { ContextMenuController } from '../ui/ContextMenuController';
 import { ShortcutHelp } from '../ui/ShortcutHelp';
 import { CharacterPalette } from '../ui/CharacterPalette';
+import { InspectorDock } from '../ui/InspectorDock';
 
 const byId = <T extends HTMLElement>(id:string):T => {
   const result=document.getElementById(id);
@@ -60,6 +61,10 @@ export class EditorApp {
     this.pointer=new PointerController(canvas,this.model,this.renderer,()=>this.commit());
     this.pointer.snap=this.settings.snap;
     this.inspector=new Inspector(byId('inspector'),this.model,()=>this.commit());
+    new InspectorDock(byId('editor-main'),this.settings.inspectorPinned,pinned=>{
+      this.settings.inspectorPinned=pinned;
+      this.settingsStore.write(this.settings);
+    });
     new ShortcutController((name,event)=>this.commands.run(name,event));
     this.menu=new ContextMenuController(canvas,this.model,this.renderer,(action,point)=>this.commands.menu(action,point));
     new CharacterPalette(byId('character-palette'));
