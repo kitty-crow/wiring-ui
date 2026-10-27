@@ -1,0 +1,85 @@
+import {expect,test} from 'bun:test';
+import {ComponentGeometry} from '../src/geometry/ComponentGeometry';
+import {DemoProject} from '../src/model/DemoProject';
+import {ProjectModel} from '../src/model/ProjectModel';
+import {ClipboardService} from '../src/model/ClipboardService';
+import {ProjectCodec} from '../src/io/ProjectCodec';
+import {ShortcutController} from '../src/input/ShortcutController';
+import type {Component} from '../src/model/types';
+
+test('quarter turns preserve terminal IDs while moving visual terminals around centre',()=>{
+  const model=new ProjectModel(new DemoProject().create(),()=>{});
+  const original=model.anchor('s1');
+  const component=model.component('sonar');
+  if(!component||!original)throw Error('missing example');
+  const centre=ComponentGeometry.centre(component);
+  expect(model.transformComponents('rotate-cw',['sonar'])).toBe(true);
+  expect(component.rotation).toBe(90);
+  expect(model.anchor('s1')?.x).toBeCloseTo(centre.x-(original.y-centre.y));
+  expect(model.anchor('s1')?.y).toBeCloseTo(centre.y+(original.x-centre.x));
+  expect(model.project.wires[0]?.from).toBe('s1');
+  model.transformComponents('rotate-ccw',['sonar']);
+  expect(component.rotation).toBe(0);
+  expect(model.anchor('s1')).toEqual(original);
+});
+test('mirror operations are reversible and terminal hit coordinates match transformed geometry',()=>{
+  const model=new ProjectModel(new DemoProject().create(),()=>{});
+  const item=model.component('moxa');
+  if(!item)throw Error('component missing');
+  const origin=model.anchor('m1');
+  model.transformComponents('mirror-horizontal',['moxa']);
+  expect(item.mirrorX).toBe(true);
+  const left=model.anchor('m1');
+  expect(left).not.toEqual(origin);
+  model.transformComponents('mirror-horizontal',['moxa']);
+  expect(model.anchor('m1')).toEqual(origin);
+  model.transformComponents('rotate-cw',['moxa']);
+  model.transformComponents('mirror-vertical',['moxa']);
+  const visual=model.anchor('m3');
+  if(!visual)throw Error('missing visual point');
+  expect(ComponentGeometry.contains(item,ComponentGeometry.centre(item))).toBe(true);
+  expect(ComponentGeometry.inverse(item,visual).x).toBeCloseTo(item.x);
+});
+test('marquee selects a stable group; transforms and deletion apply to every selected block',()=>{
+  const model=new ProjectModel(new DemoProject().create(),()=>{});
+  model.selectComponents(['sonar','moxa']);
+  expect(model.selection?.kind).toBe('multi');
+  model.transformComponents('rotate-cw');
+  expect(model.component('sonar')?.rotation).toBe(90);
+  expect(model.component('moxa')?.rotation).toBe(90);
+  model.transformComponents('mirror-horizontal');
+  expect(model.component('sonar')?.mirrorY).toBe(true);
+  expect(model.component('moxa')?.mirrorY).toBe(true);
+  model.removeSelected();
+  expect(model.project.components.map(c=>c.id)).toEqual(['psu']);
+  expect(model.project.wires.length).toBe(7);
+  expect(model.project.wires.every(w=>model.anchor(w.from)&&model.anchor(w.to))).toBe(true);
+});
+test('group clipboard keeps internal terminal wiring connected after paste',()=>{
+  const model=new ProjectModel(new DemoProject().create(),()=>{});
+  model.selectComponents(['sonar','moxa']);
+  const clipboard=new ClipboardService(model);
+  expect(clipboard.copy()).toBe(true);
+  expect(clipboard.paste()).toBe(true);
+  expect(model.project.components).toHaveLength(5);
+  expect(model.selection?.kind).toBe('multi');
+  const ids=new Set(model.project.components.slice(3).flatMap(c=>c.pins.map(p=>p.id)));
+  expect(model.project.wires.filter(w=>ids.has(w.from)&&ids.has(w.to))).toHaveLength(5);
+});
+test('old version-one drawings load without rotation, mirror or symbol value fields',()=>{
+  const demo=new DemoProject().create();
+  demo.symbols.push({id:'R1',kind:'resistor',x:40,y:40,scale:1,rotation:0,color:'#222',label:'R1'});
+  const codec=new ProjectCodec();
+  const loaded=codec.parse(codec.encode(demo));
+  expect(loaded.components[0]?.rotation).toBeUndefined();
+  expect(loaded.symbols[0]?.value).toBeUndefined();
+  loaded.symbols[0]!.value='3R3 Ω';
+  expect(codec.parse(codec.encode(loaded)).symbols[0]?.value).toBe('3R3 Ω');
+});
+test('R and E correctly honour shift without interfering with modifiers',()=>{
+  const press=(key:string,shift=false)=>ShortcutController.resolve({key,shiftKey:shift,ctrlKey:false,metaKey:false,altKey:false});
+  expect(press('r')).toBe('rotate-cw');
+  expect(press('R',true)).toBe('rotate-ccw');
+  expect(press('e')).toBe('mirror-horizontal');
+  expect(press('E',true)).toBe('mirror-vertical');
+});
