@@ -21,6 +21,13 @@ export class ClipboardService {
         annotations: project.annotations, shapes: project.shapes, symbols: project.symbols
       }));
     }
+    if (selected.kind === 'multi') {
+      const chosen=new Set(selected.ids??[]);
+      items.components=structuredClone(project.components.filter(item=>chosen.has(item.id)));
+      const terminals=new Set(items.components.flatMap(item=>item.pins.map(pin=>pin.id)));
+      items.wires=structuredClone(project.wires.filter(wire=>
+        terminals.has(wire.from)&&terminals.has(wire.to)));
+    }
     if (selected.kind === 'component') items.components = structuredClone(project.components.filter(item => item.id === selected.id));
     if (selected.kind === 'annotation') items.annotations = structuredClone(project.annotations.filter(item => item.id === selected.id));
     if (selected.kind === 'shape') items.shapes = structuredClone(project.shapes.filter(item => item.id === selected.id));
@@ -28,7 +35,7 @@ export class ClipboardService {
     if (selected.kind === 'anchor') items.anchors = structuredClone(project.anchors.filter(item => item.id === selected.id));
     if (selected.kind === 'wire' || selected.kind === 'waypoint')
       items.wires = structuredClone(project.wires.filter(item => item.id === selected.id));
-    for (const wire of selected.kind === 'all' ? [] : items.wires) {
+    for (const wire of selected.kind === 'all' || selected.kind === 'multi' ? [] : items.wires) {
         for (const endpoint of ['from', 'to'] as const) {
           const point = this.model.anchor(wire[endpoint]);
           if (!point) continue;
@@ -101,7 +108,9 @@ export class ClipboardService {
       ...data.anchors.map(item => ({kind: 'anchor' as const, id: item.id}))
     ];
     const first = candidates[0];
-    this.model.selection = first ?? null;
+    this.model.selection = data.components.length>1
+      ? {kind:'multi',id:'group',ids:data.components.map(item=>item.id)}
+      : first ?? null;
     this.model.changed();
     return true;
   }
@@ -119,7 +128,8 @@ export class ClipboardService {
     if (!selection) return false;
     const project = this.model.project;
     const matches = <T extends Point & {id:string}>(items: T[]): T[] =>
-      selection.kind === 'all' ? items : items.filter(item => item.id === selection.id);
+      selection.kind === 'all' ? items : items.filter(item => selection.kind==='multi' ?
+        (selection.ids??[]).includes(item.id) : item.id===selection.id);
     const move = (point: Point): void => { point.x += dx; point.y += dy; };
     const components = matches(project.components);
     const anchors = matches(project.anchors);
