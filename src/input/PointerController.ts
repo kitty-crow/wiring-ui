@@ -176,13 +176,13 @@ export class PointerController {
     if (!drag||!drag.moved) return;
     const {world}=this.pos(event);const target=this.tester.at(world,12/this.renderer.zoom,drag.hit?.id);
     const hit=drag.hit;
-    if(hit?.kind==='symbol')this.spliceMovedSymbol(hit.id,world);
+    if(hit?.kind==='symbol')this.spliceMovedSymbol(hit.id);
     if (hit?.kind==='anchor' && target?.kind==='segment') this.connectOnCable(hit.id,target.id,world);
     if (hit?.kind==='anchor' && (target?.kind==='pin'||target?.kind==='anchor') && hit.id!==target.id)
       this.model.connectAnchor(hit.id,target.id);
     this.commit();
   }
-  private spliceMovedSymbol(id:string,at:Point):void {
+  private spliceMovedSymbol(id:string):void {
     const symbol=this.model.project.symbols.find(item=>item.id===id);
     if(!symbol)return;
     // Use symbol centre, not mouse release position, to preserve the user's grab offset.
