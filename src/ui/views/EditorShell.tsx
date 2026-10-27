@@ -11,14 +11,20 @@ export function EditorShell() {
         <span className="brand">Wiring UI</span>
         <span id="document-name" className="document-title">Untitled</span>
         <span className="spacer" />
-        <button data-command="new" title="Load the sample schematic as a new document">New</button>
-        <button data-command="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
-        <button data-command="redo" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
-        <button data-command="open">Open</button>
-        <button data-command="json">Save project</button>
-        <button data-command="html" title="Export this editor and document as one standalone HTML file">Download HTML</button>
-        <button data-command="png">PNG</button>
-        <button data-command="print">Print</button>
+        {([
+          ['new','New','New drawing (Ctrl/Cmd+N)'],
+          ['undo','Undo','Undo (Ctrl/Cmd+Z)'],
+          ['redo','Redo','Redo (Ctrl/Cmd+Shift+Z)'],
+          ['open','Open','Open project (Ctrl/Cmd+O)'],
+          ['json','Save project','Save project (Ctrl/Cmd+S)'],
+          ['html','Download HTML','Download standalone HTML (Ctrl/Cmd+Shift+S)'],
+          ['png','Export PNG','Export PNG image'],
+          ['print','Print','Print drawing (Ctrl/Cmd+P)']
+        ] as const).map(([command,label,tooltip])=>
+          <button key={command} type="button" data-command={command}
+            className="topbar-action" title={tooltip} aria-label={label}>
+            <ToolbarIcon name={command} />
+          </button>)}
       </header>
       <nav className="toolbar" aria-label="Drawing tools">
         {([
