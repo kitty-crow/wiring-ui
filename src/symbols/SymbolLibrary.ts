@@ -1,4 +1,5 @@
 import type { SymbolInstance, SymbolKind } from '../model/types';
+import { SymbolGeometry } from './SymbolGeometry';
 
 /** Reusable schematic glyph geometry expressed as SVG paths, drawn in the canvas. */
 export class SymbolLibrary {
@@ -29,10 +30,15 @@ export class SymbolLibrary {
   public svg(kind: SymbolKind): string {
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -48 96 96"><path d="'+this.paths[kind]+'" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   }
-  public draw(ctx: CanvasRenderingContext2D, symbol: SymbolInstance): void {
+  public draw(ctx: CanvasRenderingContext2D, symbol: SymbolInstance, paper = '#ffffff'): void {
     ctx.save(); ctx.translate(symbol.x,symbol.y);ctx.rotate(symbol.rotation*Math.PI/180);ctx.scale(symbol.scale,symbol.scale);
     ctx.strokeStyle=symbol.color;ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
     ctx.stroke(new Path2D(this.paths[symbol.kind]));ctx.restore();
+    for(const terminal of SymbolGeometry.terminals(symbol)){
+      ctx.save();ctx.beginPath();ctx.arc(terminal.x,terminal.y,4.5,0,Math.PI*2);
+      ctx.fillStyle=paper;ctx.strokeStyle=symbol.color;ctx.lineWidth=1.6;
+      ctx.fill();ctx.stroke();ctx.restore();
+    }
     ctx.save();ctx.fillStyle=symbol.color;ctx.font='13px Arial';ctx.textAlign='center';
     if(symbol.label)ctx.fillText(symbol.label,symbol.x,symbol.y-37*symbol.scale);
     if(symbol.value)ctx.fillText(symbol.value,symbol.x,symbol.y+47*symbol.scale);
