@@ -74,7 +74,7 @@ export class CanvasRenderer {
     for (const wire of this.model.project.wires) this.drawWire(ctx,wire);
     this.bridges.draw(ctx,crossings,this.model.project.wires,paper);
     for (const component of this.model.project.components) this.drawComponent(ctx,component,ink,paper);
-    for (const symbol of this.model.project.symbols) this.symbols.draw(ctx,symbol);
+    for (const symbol of this.model.project.symbols) this.symbols.draw(ctx,symbol,paper);
     for (const anchor of this.model.project.anchors) {
       const used=this.model.project.wires.some(wire=>wire.from===anchor.id||wire.to===anchor.id);
       if (!used && anchor.kind==='free') continue;
