@@ -1,13 +1,14 @@
 import { createId, type Component, type FreeAnchor, type Pin, type Point, type Project, type Selection, type Wire } from './types';
 import { ComponentGeometry } from '../geometry/ComponentGeometry';
+import { SymbolGeometry } from '../symbols/SymbolGeometry';
 
 /** Object model. Deleting a component or pin makes connected cable ends free. */
 export class ProjectModel {
   public selection: Selection = null;
   private state: Project;
-  public constructor(initial: Project, private readonly onChange: () => void) { this.state = initial; }
+  public constructor(initial: Project, private readonly onChange: () => void) { SymbolGeometry.ensure(initial); this.state = initial; }
   public get project(): Project { return this.state; }
-  public set(project: Project): void { this.state = project; this.selection = null; this.changed(); }
+  public set(project: Project): void { SymbolGeometry.ensure(project); this.state = project; this.selection = null; this.changed(); }
   public changed(): void { this.onChange(); }
   public component(id: string): Component | undefined { return this.state.components.find(item => item.id === id); }
   public pin(id: string): { component: Component; pin: Pin; index: number } | null {
@@ -22,9 +23,12 @@ export class ProjectModel {
     const free = this.state.anchors.find(item => item.id === id);
     if (free) return free;
     const match = this.pin(id);
-    if (!match) return null;
-    const { component, pin, index } = match;
-    return ComponentGeometry.terminal(component,index,pin.side);
+    if (match) return ComponentGeometry.terminal(match.component,match.index,match.pin.side);
+    for (const symbol of this.state.symbols) {
+      const position=SymbolGeometry.position(symbol,id);
+      if(position)return position;
+    }
+    return null;
   }
   public createAnchor(point: Point, kind: FreeAnchor['kind'] = 'free'): FreeAnchor {
     const anchor: FreeAnchor = { id: createId(), x: point.x, y: point.y, kind };
@@ -107,7 +111,11 @@ export class ProjectModel {
     }
     if (selected.kind === 'annotation') this.state.annotations = this.state.annotations.filter(item => item.id !== id);
     if (selected.kind === 'shape') this.state.shapes = this.state.shapes.filter(item => item.id !== id);
-    if (selected.kind === 'symbol') this.state.symbols = this.state.symbols.filter(item => item.id !== id);
+    if (selected.kind === 'symbol') {
+      const symbol=this.state.symbols.find(item=>item.id===id);
+      this.detachPins(symbol?.terminals??[]);
+      this.state.symbols=this.state.symbols.filter(item=>item.id!==id);
+    }
     if (selected.kind === 'anchor') this.disconnectAnchor(id);
     this.selection = null; this.changed();
   }
