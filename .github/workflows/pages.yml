@@ -43,6 +43,8 @@ jobs:
         run: bun scripts/browser-smoke.mts
       - name: Test component transforms, marquee and symbol values in Chromium
         run: bun scripts/component-interaction-smoke.mts
+      - name: Test inline symbol cable splicing in Chromium
+        run: bun scripts/symbol-wiring-smoke.mts
       - name: Verify deployable artefact
         run: |
           test -s dist/index.html
