@@ -1,6 +1,7 @@
-import { componentHeight, type Component, type Point, type Wire } from '../model/types';
+import { type Component, type Point, type Wire } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
 import { OrthogonalGeometry } from './OrthogonalGeometry';
+import { ComponentGeometry } from './ComponentGeometry';
 
 interface Rect { left:number; right:number; top:number; bottom:number }
 type Axis = 0 | 1 | 2;
@@ -76,12 +77,9 @@ export class ObstacleRouter {
   }
 
   private bounds(component:Component,padding:number):Rect {
-    return {
-      left:component.x-padding,
-      right:component.x+component.width+padding,
-      top:component.y-padding,
-      bottom:component.y+componentHeight(component)+padding
-    };
+    const box=ComponentGeometry.bounds(component);
+    return {left:box.left-padding,right:box.right+padding,
+      top:box.top-padding,bottom:box.bottom+padding};
   }
 
   private nearby(start:Point,end:Point,components:readonly Component[]):Component[] {
