@@ -63,10 +63,10 @@ try{
   const mobilePage=await mobile.newPage();
   mobilePage.on('pageerror',e=>errors.push(e.message));
   await load(mobilePage);
-  await mobilePage.locator('#inspector-edge').click();
+  await mobilePage.locator('#inspector-edge').tap();
   if(await mobilePage.locator('#inspector-panel').getAttribute('aria-hidden')!=='false')
     throw Error('Touch edge tab failed to reveal inspector');
-  await mobilePage.locator('#inspector-pin').click();
+  await mobilePage.locator('#inspector-pin').tap();
   if(!await mobilePage.locator('#editor-main').evaluate(node=>node.classList.contains('inspector-pinned')))
     throw Error('Mobile pin did not open lower property section');
   const overflow=await mobilePage.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
