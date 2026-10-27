@@ -38,6 +38,13 @@ export class ComponentGeometry {
     const local=this.inverse(c,point);
     return local.x>=c.x&&local.x<=c.x+c.width&&local.y>=c.y&&local.y<=c.y+componentHeight(c);
   }
+  public static transformPoint(point:Point,action:'rotate-cw'|'rotate-ccw'|'mirror-horizontal'|'mirror-vertical',about:Point):Point {
+    const dx=point.x-about.x,dy=point.y-about.y;
+    if(action==='rotate-cw')return{x:about.x-dy,y:about.y+dx};
+    if(action==='rotate-ccw')return{x:about.x+dy,y:about.y-dx};
+    if(action==='mirror-horizontal')return{x:about.x-dx,y:point.y};
+    return{x:point.x,y:about.y-dy};
+  }
   /** Component position changes with its group centre; rotation updates only geometry. */
   public static rotate(c:Component,clockwise:boolean,about:Point):void {
     const old=this.centre(c);
