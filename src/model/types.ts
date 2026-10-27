@@ -11,7 +11,7 @@ export interface FreeAnchor extends Point { id: string; kind: 'free' | 'junction
 export interface Wire { id: string; from: string; to: string; points: Point[]; color: string; dash: Dash; width: number; label: string }
 export interface Annotation { id: string; text: string; x: number; y: number; size: number; font: string; color: string; bold: boolean }
 export interface Shape { id: string; kind: ShapeKind; x: number; y: number; width: number; height: number; color: string; fill: string; stroke: number; dash: Dash; points?: Point[] }
-export interface SymbolInstance extends Point { id: string; kind: SymbolKind; scale: number; rotation: number; color: string; label: string; value?: string }
+export interface SymbolInstance extends Point { id: string; kind: SymbolKind; scale: number; rotation: number; color: string; label: string; value?: string; terminals?: string[] }
 /** Embedded rasterised PDF or supplied image. No external resource URLs required. */
 export interface Background { data: string; opacity: number; x: number; y: number; width: number; height: number }
 export interface Project { version: 1; name: string; width: number; height: number; components: Component[]; anchors: FreeAnchor[]; wires: Wire[]; annotations: Annotation[]; shapes: Shape[]; symbols: SymbolInstance[]; background: Background | null }
