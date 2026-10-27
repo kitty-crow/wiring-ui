@@ -1,3 +1,6 @@
+import { createElement } from 'react';
+import { replaceChildrenWithReact } from './reactHelpers';
+import { ContextMenuView } from './views/ContextMenuView';
 import { HitTester, type Hit } from '../input/HitTester';
 import { ProjectModel } from '../model/ProjectModel';
 import { CanvasRenderer } from '../render/CanvasRenderer';
@@ -53,15 +56,7 @@ export class ContextMenuController {
     this.model.selection = this.asSelection(hit);
     this.model.changed();
     const entries = this.options(hit);
-    this.root.replaceChildren();
-    for (const entry of entries) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.dataset.action = entry.action;
-      button.setAttribute('role', 'menuitem');
-      button.textContent = entry.label;
-      this.root.append(button);
-    }
+    replaceChildrenWithReact(this.root, createElement(ContextMenuView,{entries}));
     this.root.hidden = false;
     const width = this.root.offsetWidth;
     const height = this.root.offsetHeight;
