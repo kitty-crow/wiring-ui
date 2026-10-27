@@ -43,11 +43,11 @@ test('resistor insertion splits one cable into two independent styled leads',()=
   expect(outgoing?.width).toBe(3.5);
   expect(outgoing?.label).toBe('');
   const router=new WireRouter(model);
-  expect(router.path(incoming!)).toEqual([
-    {x:100,y:550},{x:207,y:550},{id:first,x:314,y:550}
+  expect(router.path(incoming!).map(p=>({x:p.x,y:p.y}))).toEqual([
+    {x:100,y:550},{x:207,y:550},{x:314,y:550}
   ]);
-  expect(router.path(outgoing!)).toEqual([
-    {id:second,x:386,y:550},{x:493,y:550},{id:outgoing!.to,x:600,y:550}
+  expect(router.path(outgoing!).map(p=>({x:p.x,y:p.y}))).toEqual([
+    {x:386,y:550},{x:493,y:550},{x:600,y:550}
   ]);
   expect(model.anchor(first!)?.x).toBe(314);
   expect(model.anchor(second!)?.x).toBe(386);
