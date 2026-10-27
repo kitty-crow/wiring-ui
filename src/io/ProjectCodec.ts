@@ -1,4 +1,5 @@
 import type { Project, Point, PinSide, Dash, ShapeKind, SymbolKind } from '../model/types';
+import { SymbolGeometry } from '../symbols/SymbolGeometry';
 
 const object=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null&&!Array.isArray(value);
 const str=(value:unknown,max=1000):value is string=>typeof value==='string'&&value.length<=max;
@@ -16,7 +17,7 @@ const anchor=(value:unknown):boolean=>object(value)&&str(value.id,120)&&num(valu
 const wire=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.from,120)&&str(value.to,120)&&all(value.points,point)&&str(value.color,120)&&dash(value.dash)&&num(value.width)&&str(value.label,400);
 const annotation=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.text,20000)&&num(value.x)&&num(value.y)&&num(value.size)&&str(value.font,100)&&str(value.color,120)&&typeof value.bold==='boolean';
 const shape=(value:unknown):boolean=>object(value)&&str(value.id,120)&&shapeKind(value.kind)&&num(value.x)&&num(value.y)&&num(value.width)&&num(value.height)&&str(value.color,120)&&str(value.fill,120)&&num(value.stroke)&&dash(value.dash)&&(value.points===undefined||all(value.points,point));
-const symbol=(value:unknown):boolean=>object(value)&&str(value.id,120)&&symbolKind(value.kind)&&num(value.x)&&num(value.y)&&num(value.scale)&&num(value.rotation)&&str(value.color,120)&&str(value.label,400);
+const symbol=(value:unknown):boolean=>object(value)&&str(value.id,120)&&symbolKind(value.kind)&&num(value.x)&&num(value.y)&&num(value.scale)&&num(value.rotation)&&str(value.color,120)&&str(value.label,400)&&(value.value===undefined||str(value.value,400))&&(value.terminals===undefined||(all(value.terminals,v=>str(v,120))&&value.terminals.length===SymbolGeometry.count(value.kind as SymbolKind)));
 const background=(value:unknown):boolean=>value===null||(object(value)&&str(value.data,30_000_000)&&value.data.startsWith('data:image/')&&num(value.opacity)&&num(value.x)&&num(value.y)&&num(value.width)&&num(value.height));
 
 /** Schema gate for both projects and downloaded HTML. Reject malformed and remote assets. */
@@ -32,9 +33,13 @@ export class ProjectCodec {
     if(parsed.symbols===undefined)parsed.symbols=[];
     if(!all(parsed.anchors,anchor)||!all(parsed.symbols,symbol)||!background(parsed.background))throw new Error('Invalid anchors, symbols or template');
     const project=parsed as unknown as Project;
-    const ids=new Set(project.components.flatMap(item=>item.pins.map(pin=>pin.id)).concat(project.anchors.map(item=>item.id)));
+    SymbolGeometry.ensure(project);
+    const allIds=project.components.flatMap(item=>item.pins.map(pin=>pin.id))
+      .concat(project.anchors.map(item=>item.id))
+      .concat(project.symbols.flatMap(item=>item.terminals??[]));
+    const ids=new Set(allIds);
     if(project.wires.some(item=>!ids.has(item.from)||!ids.has(item.to)))throw new Error('Cable references a missing anchor');
-    if(ids.size!==project.components.reduce((sum,item)=>sum+item.pins.length,0)+project.anchors.length)throw new Error('Duplicate terminal/anchor IDs');
+    if(ids.size!==allIds.length)throw new Error('Duplicate terminal/anchor IDs');
     return project;
   }
   public encode(project:Project):string{return JSON.stringify(project,null,2);}
