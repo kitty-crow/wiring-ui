@@ -83,8 +83,22 @@ try{
       panelVisible:getComputedStyle(document.querySelector('#inspector-panel')!).visibility,
       panelPointer:getComputedStyle(document.querySelector('#inspector-panel')!).pointerEvents};
   });
+  await mobilePage.evaluate(()=>{
+    const log:string[]=[];
+    (window as Window & {dockTouchEvents?:string[]}).dockTouchEvents=log;
+    const main=document.querySelector('#editor-main');
+    for(const type of ['pointerdown','pointermove','pointerup','pointerleave','click','touchstart','touchend']) {
+      document.addEventListener(type,event=>{
+        const pointer=event as PointerEvent;
+        const target=event.target as Element|null;
+        log.push(type+' '+(target?.id||target?.tagName||'')+' '+(pointer.pointerType||'')+
+          ' '+(main?.className||''));
+      },true);
+    }
+  });
   console.log('Mobile pin hit-test',JSON.stringify(hit));
   await mobilePage.locator('#inspector-pin').tap();
+  console.log('Mobile touch events',await mobilePage.evaluate(()=>(window as Window & {dockTouchEvents?:string[]}).dockTouchEvents));
   console.log('Mobile pin state',await mobilePage.locator('#inspector-pin').getAttribute('aria-pressed'),
     await mobilePage.locator('#editor-main').getAttribute('class'));
   if(!await mobilePage.locator('#editor-main').evaluate(node=>node.classList.contains('inspector-pinned')))
