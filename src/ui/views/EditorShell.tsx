@@ -71,7 +71,31 @@ export function EditorShell() {
           <canvas id="editor-canvas" tabIndex={0} aria-label="Interactive schematic drawing surface" />
           <button id="hover-add-pin" className="hover-add" hidden>+ Terminal</button>
         </section>
-        <aside id="inspector" aria-label="Properties" />
+        <button id="inspector-edge" className="inspector-edge" type="button"
+          title="Show properties" aria-label="Show properties" aria-controls="inspector-panel"
+          aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            strokeLinejoin="round" aria-hidden="true">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </button>
+        <aside id="inspector-panel" aria-label="Properties panel">
+          <div className="inspector-heading">
+            <span>Properties</span>
+            <button id="inspector-pin" type="button" aria-label="Pin properties panel"
+              title="Pin properties panel open" aria-pressed="false">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"
+                strokeLinejoin="round" aria-hidden="true">
+                <path d="m16 3 5 5-3.5 1.5-.5 4.5 2 2-3 3-3-3-4.5.5L7 20l-4-4 3.5-1.5.5-4.5-2-2 3-3 2 2 4.5-.5Z"
+                  transform="translate(2 -2) scale(.82)"/>
+                <path d="M4 20 11 13"/>
+              </svg>
+            </button>
+          </div>
+          <div id="inspector" aria-label="Properties" />
+        </aside>
       </main>
       <footer id="status" className="status" role="status">Ready</footer>
     </div>
