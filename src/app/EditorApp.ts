@@ -49,7 +49,7 @@ export class EditorApp {
       try {seed=this.codec.parse(embedded);}catch(error){console.warn('Invalid embedded project',error);}
     }
     this.model=new ProjectModel(seed,()=>this.updated());
-    this.commands=new EditorCommands(this.model,()=>this.updated(),()=>this.scheduleSave(),command=>this.externalCommand(command),message=>this.alert(message));
+    this.commands=new EditorCommands(this.model,()=>this.updated(),()=>this.scheduleSave(),command=>this.externalCommand(command),message=>this.alert(message),()=>this.hoveredComponentId);
     const canvas=byId<HTMLCanvasElement>('editor-canvas');
     this.renderer=new CanvasRenderer(canvas,byId<HTMLCanvasElement>('grid-canvas'),this.model);
     this.renderer.dark=this.settings.theme==='dark';this.renderer.grid=this.settings.grid;
@@ -65,7 +65,7 @@ export class EditorApp {
   }
   private updated(): void {
     this.renderer.invalidate();
-    const key=this.model.selection?.kind+':'+this.model.selection?.id+':'+this.model.selection?.index;
+    const key=this.model.selection?.kind+':'+this.model.selection?.id+':'+this.model.selection?.index+':'+this.model.selection?.ids?.join(',');
     if (key!==this.inspectorSelection){this.inspector.render();this.inspectorSelection=key;}
     const name=byId<HTMLElement>('document-name');
     name.textContent=this.model.project.name;
