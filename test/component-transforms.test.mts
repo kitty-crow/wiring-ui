@@ -83,3 +83,22 @@ test('R and E correctly honour shift without interfering with modifiers',()=>{
   expect(press('e')).toBe('mirror-horizontal');
   expect(press('E',true)).toBe('mirror-vertical');
 });
+
+test('internal manual cable waypoints rotate and mirror together with selected devices',()=>{
+  const model=new ProjectModel(new DemoProject().create(),()=>{});
+  const cable=model.project.wires.find(w=>w.id==='wire0');
+  if(!cable)throw Error('fixture cable missing');
+  cable.points=[{x:600,y:320},{x:800,y:320}];
+  const prior=structuredClone(cable.points);
+  model.selectComponents(['sonar','moxa']);
+  model.transformComponents('rotate-cw');
+  expect(cable.points).not.toEqual(prior);
+  model.transformComponents('rotate-ccw');
+  expect(cable.points[0]?.x).toBeCloseTo(prior[0]?.x??0);
+  expect(cable.points[0]?.y).toBeCloseTo(prior[0]?.y??0);
+  model.transformComponents('mirror-horizontal');
+  model.transformComponents('mirror-horizontal');
+  expect(cable.points[1]?.x).toBeCloseTo(prior[1]?.x??0);
+  expect(cable.from).toBe('s1');
+  expect(cable.to).toBe('m1');
+});
