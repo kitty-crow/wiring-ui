@@ -61,7 +61,7 @@ try {
   await page.mouse.down();
   await page.mouse.move(last.x,last.y,{steps:12});
   await page.mouse.up();
-  await page.getByText('3 components selected').waitFor();
+  await page.getByText('3 components selected').waitFor({state:'attached'});
   await page.keyboard.press('Control+r');
   project=await save();
   if(!project.components.every(c=>c.rotation===90))throw Error('Group rotation did not affect every selected component');
