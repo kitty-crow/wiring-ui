@@ -86,7 +86,7 @@ test('drawing toolbar exposes descriptive SVG icons and accessible hover tooltip
     ['data-tool',iconOnlyTools],['data-command',iconOnlyCommands]
   ] as const){
     for(const name of names){
-      const opening=new RegExp('<button\\\\b[^>]*'+attribute+'="'+name+'"[^>]*>').exec(html)?.[0];
+      const opening=new RegExp('<button[^>]*'+attribute+'="'+name+'"[^>]*>').exec(html)?.[0];
       expect(opening).toBeDefined();
       expect(opening).toContain('aria-label="');
       expect(opening).toContain('title="');
