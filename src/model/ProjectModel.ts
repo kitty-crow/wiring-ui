@@ -1,4 +1,5 @@
 import { createId, type Component, type FreeAnchor, type Pin, type Point, type Project, type Selection, type Wire } from './types';
+import { ComponentGeometry } from '../geometry/ComponentGeometry';
 
 /** Object model. Deleting a component or pin makes connected cable ends free. */
 export class ProjectModel {
@@ -23,7 +24,7 @@ export class ProjectModel {
     const match = this.pin(id);
     if (!match) return null;
     const { component, pin, index } = match;
-    return { x: component.x + (pin.side === 'right' ? component.width : 0), y: component.y + 83 + index * 31 };
+    return ComponentGeometry.terminal(component,index,pin.side);
   }
   public createAnchor(point: Point, kind: FreeAnchor['kind'] = 'free'): FreeAnchor {
     const anchor: FreeAnchor = { id: createId(), x: point.x, y: point.y, kind };
@@ -32,6 +33,35 @@ export class ProjectModel {
   public addWire(from: string, to: string): Wire {
     const wire: Wire = { id: createId(), from, to, points: [], color: '#1479af', dash: 'solid', width: 2.5, label: '' };
     this.state.wires.push(wire); this.selection = { kind: 'wire', id: wire.id }; this.changed(); return wire;
+  }
+  /** Selection is a set of stable component IDs rather than a bounding rectangle. */
+  public selectedComponents():Component[] {
+    const selection=this.selection;
+    if (selection?.kind==='all')return [...this.state.components];
+    if (selection?.kind==='multi')return this.state.components.filter(c=>selection.ids?.includes(c.id));
+    if (selection?.kind==='component')return this.state.components.filter(c=>c.id===selection.id);
+    return [];
+  }
+  public selectComponents(ids:readonly string[]):void {
+    const present=[...new Set(ids)].filter(id=>this.component(id)!==undefined);
+    this.selection=present.length===0?null:
+      present.length===1?{kind:'component',id:present[0]??''}:
+      {kind:'multi',id:'group',ids:present};
+    this.changed();
+  }
+  public transformComponents(action:'rotate-cw'|'rotate-ccw'|'mirror-horizontal'|'mirror-vertical',ids?:readonly string[]):boolean {
+    const components=ids?this.state.components.filter(c=>ids.includes(c.id)):this.selectedComponents();
+    if(components.length===0)return false;
+    const boxes=components.map(c=>ComponentGeometry.bounds(c));
+    const mid={x:(Math.min(...boxes.map(b=>b.left))+Math.max(...boxes.map(b=>b.right)))/2,
+      y:(Math.min(...boxes.map(b=>b.top))+Math.max(...boxes.map(b=>b.bottom)))/2};
+    for(const c of components) {
+      if(action==='rotate-cw')ComponentGeometry.rotate(c,true,mid);
+      if(action==='rotate-ccw')ComponentGeometry.rotate(c,false,mid);
+      if(action==='mirror-horizontal')ComponentGeometry.mirror(c,'horizontal',mid);
+      if(action==='mirror-vertical')ComponentGeometry.mirror(c,'vertical',mid);
+    }
+    this.changed();return true;
   }
   public addComponent(point: Point): Component {
     const item: Component = { id: createId(), name: 'New component', detail: 'Terminal header', x: point.x, y: point.y, width: 270,
@@ -55,6 +85,12 @@ export class ProjectModel {
       const component = this.component(id);
       this.detachPins(component?.pins.map(pin => pin.id) ?? []);
       this.state.components = this.state.components.filter(item => item.id !== id);
+    }
+    if (selected.kind === 'multi') {
+      const removed=new Set(selected.ids??[]);
+      const components=this.state.components.filter(item=>removed.has(item.id));
+      this.detachPins(components.flatMap(item=>item.pins.map(pin=>pin.id)));
+      this.state.components=this.state.components.filter(item=>!removed.has(item.id));
     }
     if (selected.kind === 'all') {
       this.state.components = []; this.state.anchors = []; this.state.wires = [];
