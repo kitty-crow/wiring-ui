@@ -30,6 +30,8 @@ export class ShortcutController {
         case 'n': return event.shiftKey ? null : 'new';
         case 'p': return event.shiftKey ? null : 'print';
         case '0': return event.shiftKey ? null : 'fit';
+        case 'r': return event.shiftKey ? 'rotate-ccw' : 'rotate-cw';
+        case 'e': return event.shiftKey ? 'mirror-vertical' : 'mirror-horizontal';
         default: return null;
       }
     }
@@ -42,12 +44,10 @@ export class ShortcutController {
     if (key === 'arrowleft') return 'nudge-left';
     if (key === 'arrowright') return 'nudge-right';
     if (key === '?' || (key === '/' && event.shiftKey)) return 'shortcuts';
-    if (key === 'r') return event.shiftKey ? 'rotate-ccw' : 'rotate-cw';
-    if (key === 'e') return event.shiftKey ? 'mirror-vertical' : 'mirror-horizontal';
     if (event.shiftKey) return null;
     const tools: Readonly<Record<string, EditorCommand>> = {
       v: 'tool-select', h: 'tool-pan', w: 'tool-wire', b: 'tool-component',
-      j: 'tool-junction', t: 'tool-text', s: 'tool-symbol',  l: 'tool-line', p: 'tool-polygon', q: 'tool-polyline', g: 'grid', f: 'fit'
+      j: 'tool-junction', t: 'tool-text', s: 'tool-symbol', r: 'tool-rectangle', e: 'tool-ellipse', l: 'tool-line', p: 'tool-polygon', q: 'tool-polyline', g: 'grid', f: 'fit'
     };
     return tools[key] ?? null;
   }
