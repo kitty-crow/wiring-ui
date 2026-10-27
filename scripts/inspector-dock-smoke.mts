@@ -73,7 +73,20 @@ try{
     const expectedLeft=main.getBoundingClientRect().right-panel.offsetWidth;
     return Math.abs(panel.getBoundingClientRect().left-expectedLeft)<1;
   });
+  const hit=await mobilePage.locator('#inspector-pin').evaluate(button=>{
+    const b=button.getBoundingClientRect();
+    const cx=(b.left+b.right)/2,cy=(b.top+b.bottom)/2;
+    const under=document.elementFromPoint(cx,cy);
+    return {button:{x:cx,y:cy,width:b.width,height:b.height},
+      under:under?.id??under?.tagName,
+      underParent:under?.parentElement?.id,
+      panelVisible:getComputedStyle(document.querySelector('#inspector-panel')!).visibility,
+      panelPointer:getComputedStyle(document.querySelector('#inspector-panel')!).pointerEvents};
+  });
+  console.log('Mobile pin hit-test',JSON.stringify(hit));
   await mobilePage.locator('#inspector-pin').tap();
+  console.log('Mobile pin state',await mobilePage.locator('#inspector-pin').getAttribute('aria-pressed'),
+    await mobilePage.locator('#editor-main').getAttribute('class'));
   if(!await mobilePage.locator('#editor-main').evaluate(node=>node.classList.contains('inspector-pinned')))
     throw Error('Mobile pin did not open lower property section');
   const overflow=await mobilePage.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
