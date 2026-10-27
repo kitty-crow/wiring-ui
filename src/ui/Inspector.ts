@@ -15,6 +15,7 @@ export class Inspector {
   }
   public render():void {
     const selected=this.model.selection;
+    if(selected?.kind==='multi'){this.root.innerHTML='<div class="panel-title">Multiple components</div><p class="help">'+(selected.ids?.length??0)+' components selected. R / Shift+R rotates, E / Shift+E mirrors. Delete and clipboard shortcuts affect the whole selection.</p>'+this.actions();return;}
     if (!selected) {this.renderProject(this.model.project);return;}
     const component=selected.kind==='component'?this.model.component(selected.id):undefined;
     if (component){this.renderComponent(component);return;}
@@ -23,7 +24,7 @@ export class Inspector {
     const note=selected.kind==='annotation'?this.model.project.annotations.find(item=>item.id===selected.id):undefined;
     if (note){this.root.innerHTML='<div class="panel-title">Text annotation</div>'+multiline('Text','text',note.text)+field('Font','font',note.font)+field('Font size','size',String(note.size),'number')+field('Colour','color',note.color,'color')+select('Weight','bold',note.bold?'true':'false',['false','true'])+this.actions();return;}
     const symbol=selected.kind==='symbol'?this.model.project.symbols.find(item=>item.id===selected.id):undefined;
-    if (symbol){this.root.innerHTML='<div class="panel-title">Circuit symbol</div>'+field('Label','label',symbol.label)+field('Scale','scale',String(symbol.scale),'number')+field('Rotation (degrees)','rotation',String(symbol.rotation),'number')+field('Colour','color',symbol.color,'color')+this.actions();return;}
+    if (symbol){this.root.innerHTML='<div class="panel-title">Circuit symbol</div>'+field('Label','label',symbol.label)+field('Value','value',symbol.value??'')+field('Scale','scale',String(symbol.scale),'number')+field('Rotation (degrees)','rotation',String(symbol.rotation),'number')+field('Colour','color',symbol.color,'color')+this.actions();return;}
     const anchor=selected.kind==='anchor'?this.model.project.anchors.find(item=>item.id===selected.id):undefined;
     if (anchor){this.root.innerHTML='<div class="panel-title">Free end / junction</div>'+select('Node type','kind',anchor.kind,['free','junction'])+field('X','x',String(anchor.x),'number')+field('Y','y',String(anchor.y),'number')+'<p class="help">Drag onto another terminal to reconnect. Junctions create real electrical continuity.</p>';return;}
     const shape=selected.kind==='shape'?this.model.project.shapes.find(item=>item.id===selected.id):undefined;
@@ -67,7 +68,7 @@ export class Inspector {
     const key=target.dataset.key;
     if (!key)return;
     const entity=this.entity(this.model.selection);
-    if (!entity || !Object.prototype.hasOwnProperty.call(entity,key))return;
+    if (!entity || (!Object.prototype.hasOwnProperty.call(entity,key)&&!(key==='value'&&this.model.selection?.kind==='symbol')))return;
     let value:string|number|boolean=target.value;
     if (['width','height','size','stroke','x','y','scale','rotation','opacity'].includes(key))value=Number(target.value);
     if (key==='bold')value=value==='true';
