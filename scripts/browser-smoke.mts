@@ -58,6 +58,8 @@ try {
     return {x:x+470*zoom,y:y+233*zoom};
   });
   await page.locator('#editor-canvas').click({ position: screen });
+  await page.locator('#inspector-edge').focus();
+  await page.keyboard.press('Enter');
   await page.getByRole('button', { name: 'Apply colour' }).waitFor({ state: 'visible' });
   const colour = page.locator('#inspector input[type=color][data-key=color]');
   await colour.evaluate((element: Element) => {
