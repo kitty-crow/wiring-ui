@@ -41,6 +41,8 @@ jobs:
         run: bun vendor/pages/src/cli.ts audit-mobile dist
       - name: Browser smoke test of production bundle
         run: bun scripts/browser-smoke.mts
+      - name: Test component transforms, marquee and symbol values in Chromium
+        run: bun scripts/component-interaction-smoke.mts
       - name: Verify deployable artefact
         run: |
           test -s dist/index.html
