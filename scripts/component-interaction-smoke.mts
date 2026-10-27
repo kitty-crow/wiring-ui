@@ -89,6 +89,8 @@ try {
     x:placement.x-(await page.locator('#editor-canvas').boundingBox())!.x,
     y:placement.y-(await page.locator('#editor-canvas').boundingBox())!.y
   }});
+  await page.locator('#inspector-edge').focus();
+  await page.keyboard.press('Enter');
   const value=page.locator('#inspector input[data-key="value"]');
   await value.waitFor({state:'visible'});
   await page.locator('#inspector input[data-key="label"]').fill('R1');
