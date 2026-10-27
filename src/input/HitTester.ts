@@ -1,6 +1,7 @@
-import { componentHeight, pointDistance, type Point } from '../model/types';
+import { pointDistance, type Point } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
 import { WireRouter } from '../geometry/WireRouter';
+import { ComponentGeometry } from '../geometry/ComponentGeometry';
 
 export type Hit = { kind: 'pin' | 'component' | 'wire' | 'waypoint' | 'anchor' | 'annotation' | 'shape' | 'symbol' | 'segment'; id: string; index?: number };
 /** Deterministic hit testing, independent of UI and input devices. */
@@ -25,7 +26,7 @@ export class HitTester {
       if (near && near.distance<radius) return {kind:'segment',id:wire.id,index:near.index};
     }
     for (const component of [...this.model.project.components].reverse()) {
-      if (point.x>=component.x && point.x<=component.x+component.width && point.y>=component.y && point.y<=component.y+componentHeight(component)) return {kind:'component',id:component.id};
+      if (ComponentGeometry.contains(component,point)) return {kind:'component',id:component.id};
     }
     for (const symbol of [...this.model.project.symbols].reverse()) {
       if (pointDistance(symbol,point)<38*symbol.scale) return {kind:'symbol',id:symbol.id};
