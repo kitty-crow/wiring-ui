@@ -23,6 +23,16 @@ test('standard file and clipboard commands do not overlap drawing shortcuts', ()
   expect(press('v')).toBe('tool-select');
   expect(press('w')).toBe('tool-wire');
   expect(press('s')).toBe('tool-symbol');
+  expect(press('r')).toBe('tool-rectangle');
+  expect(press('e')).toBe('tool-ellipse');
+  expect(press('r',true)).toBe('rotate-cw');
+  expect(press('R',true,true)).toBe('rotate-ccw');
+  expect(press('e',true)).toBe('mirror-horizontal');
+  expect(press('E',true,true)).toBe('mirror-vertical');
+  expect(press('r',false,false,false,true)).toBe('rotate-cw');
+  expect(press('R',false,true,false,true)).toBe('rotate-ccw');
+  expect(press('e',false,false,false,true)).toBe('mirror-horizontal');
+  expect(press('E',false,true,false,true)).toBe('mirror-vertical');
   expect(press('F10',false,true)).toBe('context-menu');
   expect(press('ArrowUp',false,false,true)).toBe('nudge-up');
   expect(press('r',true,false,true)).toBe('macro-toggle');
