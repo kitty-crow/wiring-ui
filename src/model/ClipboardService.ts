@@ -90,7 +90,7 @@ export class ClipboardService {
       for (const waypoint of wire.points) shifted(waypoint, distance);
     }
     for (const note of data.annotations) { note.id = createId(); shifted(note, distance); }
-    for (const symbol of data.symbols) { symbol.id = createId(); shifted(symbol, distance); }
+    for (const symbol of data.symbols) { symbol.id = createId(); shifted(symbol, distance); symbol.terminals = symbol.terminals?.map(newId); }
     for (const shape of data.shapes) { shape.id = createId(); shifted(shape, distance); shape.points?.forEach(vertex=>shifted(vertex,distance)); }
     const project = this.model.project;
     project.components.push(...data.components);
