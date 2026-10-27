@@ -4,12 +4,14 @@ import { componentHeight, type Component, type Point, type Shape, type Wire } fr
 import { GpuGrid } from './GpuGrid';
 import { SymbolLibrary } from '../symbols/SymbolLibrary';
 import { CrossoverPainter } from './CrossoverPainter';
+import { ComponentGeometry } from '../geometry/ComponentGeometry';
 
 export class CanvasRenderer {
   public zoom = 1;
   public offset: Point = { x: 25, y: 25 };
   public dark = false;
   public grid = true;
+  public marquee: {start:Point; end:Point}|null=null;
   private frameRequested = false;
   private background: HTMLImageElement | null = null;
   private backgroundData = '';
@@ -86,9 +88,18 @@ export class CanvasRenderer {
       note.text.split('\n').forEach((line,index) => ctx.fillText(line,note.x,note.y + index * note.size * 1.35));
       if (this.model.selection?.id === note.id) { ctx.strokeStyle = '#2563eb';ctx.strokeRect(note.x-4,note.y-note.size,note.text.length*note.size*0.6+8,note.size+8); }
     }
+    this.drawMarquee(ctx);
     ctx.restore();
     ctx.setTransform(1,0,0,1,0,0);
 
+  }
+  private drawMarquee(ctx:CanvasRenderingContext2D):void {
+    const region=this.marquee;
+    if(!region)return;
+    const x=Math.min(region.start.x,region.end.x),y=Math.min(region.start.y,region.end.y);
+    const width=Math.abs(region.start.x-region.end.x),height=Math.abs(region.start.y-region.end.y);
+    ctx.save();ctx.setLineDash([7,4]);ctx.strokeStyle='#2563eb';ctx.fillStyle='#2563eb20';
+    ctx.lineWidth=1.7/this.zoom;ctx.fillRect(x,y,width,height);ctx.strokeRect(x,y,width,height);ctx.restore();
   }
   private paintTemplate(ctx: CanvasRenderingContext2D): void {
     const bg = this.model.project.background;
@@ -145,8 +156,12 @@ export class CanvasRenderer {
   }
   private drawComponent(ctx: CanvasRenderingContext2D, component: Component, ink: string, paper: string): void {
     const height = componentHeight(component);
-    ctx.save();ctx.fillStyle=paper;ctx.strokeStyle = this.model.selection?.id === component.id ? '#2563eb' : ink;
-    ctx.lineWidth = this.model.selection?.id === component.id ? 3 : 1.8;
+    const centre=ComponentGeometry.centre(component);
+    ctx.save();ctx.translate(centre.x,centre.y);ctx.rotate(ComponentGeometry.rotation(component)*Math.PI/180);
+    ctx.scale(component.mirrorX?-1:1,component.mirrorY?-1:1);ctx.translate(-centre.x,-centre.y);
+    const chosen=this.model.selectedComponents().some(c=>c.id===component.id);
+    ctx.fillStyle=paper;ctx.strokeStyle = chosen ? '#2563eb' : ink;
+    ctx.lineWidth = chosen ? 3 : 1.8;
     ctx.fillRect(component.x,component.y,component.width,height);ctx.strokeRect(component.x,component.y,component.width,height);
     ctx.fillStyle = this.dark ? '#25344a' : '#f0f4f8';ctx.fillRect(component.x+1,component.y+1,component.width-2,58);
     ctx.beginPath();ctx.moveTo(component.x,component.y+59);ctx.lineTo(component.x+component.width,component.y+59);ctx.stroke();
