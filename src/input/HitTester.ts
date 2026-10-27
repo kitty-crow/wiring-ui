@@ -1,6 +1,7 @@
 import { pointDistance, type Point } from '../model/types';
 import { ProjectModel } from '../model/ProjectModel';
 import { WireRouter } from '../geometry/WireRouter';
+import { SymbolGeometry } from '../symbols/SymbolGeometry';
 import { ComponentGeometry } from '../geometry/ComponentGeometry';
 
 export type Hit = { kind: 'pin' | 'component' | 'wire' | 'waypoint' | 'anchor' | 'annotation' | 'shape' | 'symbol' | 'segment'; id: string; index?: number };
@@ -13,6 +14,11 @@ export class HitTester {
       for (const pin of component.pins) {
         const position=this.model.anchor(pin.id);
         if (position && pin.id!==excludedAnchor && pointDistance(position,point)<radius) return {kind:'pin',id:pin.id};
+      }
+    }
+    for (const symbol of this.model.project.symbols) {
+      for (const terminal of SymbolGeometry.terminals(symbol)) {
+        if(terminal.id!==excludedAnchor&&pointDistance(terminal,point)<radius)return{kind:'pin',id:terminal.id};
       }
     }
     for (const anchor of this.model.project.anchors) {
