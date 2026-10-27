@@ -98,3 +98,28 @@ test('drawing toolbar exposes descriptive SVG icons and accessible hover tooltip
   expect(html).toContain('id="symbol-picker"');
   expect(html).toContain('aria-label="Choose schematic symbol"');
 });
+
+test('document topbar uses SVG icons and tooltip labels for all eight actions',()=>{
+  const html=render2Mkup(createElement(EditorShell));
+  const actions={
+    new:'New',
+    undo:'Undo',
+    redo:'Redo',
+    open:'Open',
+    json:'Save project',
+    html:'Download HTML',
+    png:'Export PNG',
+    print:'Print'
+  } as const;
+  for(const [command,label] of Object.entries(actions)){
+    const opening=new RegExp('<button[^>]*data-command="'+command+'"[^>]*>').exec(html)?.[0];
+    expect(opening).toBeDefined();
+    expect(opening).toContain('aria-label="'+label+'"');
+    expect(opening).toContain('title="');
+    expect(opening).toContain('class="topbar-action"');
+    const offset=html.indexOf(opening??'__missing__');
+    const children=html.slice(offset+(opening?.length??0),offset+(opening?.length??0)+280);
+    expect(children).toContain('<svg');
+    expect(children).toContain('aria-hidden="true"');
+  }
+});
