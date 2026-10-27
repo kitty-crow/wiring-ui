@@ -11,7 +11,7 @@ const shapeKind=(value:unknown):value is ShapeKind=>inList(value,['rectangle','e
 const symbolKind=(value:unknown):value is SymbolKind=>inList(value,['ground','vcc','vdd','vss','nc','resistor','capacitor','inductor','diode','led','fuse','switch','testpoint']);
 const all=(value:unknown,check:(value:unknown)=>boolean):boolean=>Array.isArray(value)&&value.length<=10000&&value.every(check);
 const pin=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.number,100)&&str(value.label,300)&&side(value.side);
-const component=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.name,500)&&str(value.detail,500)&&num(value.x)&&num(value.y)&&num(value.width)&&all(value.pins,pin);
+const component=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.name,500)&&str(value.detail,500)&&num(value.x)&&num(value.y)&&num(value.width)&&all(value.pins,pin)&&(value.rotation===undefined||inList(value.rotation,[0,90,180,270]))&&(value.mirrorX===undefined||typeof value.mirrorX==='boolean')&&(value.mirrorY===undefined||typeof value.mirrorY==='boolean');
 const anchor=(value:unknown):boolean=>object(value)&&str(value.id,120)&&num(value.x)&&num(value.y)&&inList(value.kind,['free','junction']);
 const wire=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.from,120)&&str(value.to,120)&&all(value.points,point)&&str(value.color,120)&&dash(value.dash)&&num(value.width)&&str(value.label,400);
 const annotation=(value:unknown):boolean=>object(value)&&str(value.id,120)&&str(value.text,20000)&&num(value.x)&&num(value.y)&&num(value.size)&&str(value.font,100)&&str(value.color,120)&&typeof value.bold==='boolean';
