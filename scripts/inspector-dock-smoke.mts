@@ -21,7 +21,6 @@ try{
   await load(page);
   const main=page.locator('#editor-main');
   const panel=page.locator('#inspector-panel');
-  const edge=page.locator('#inspector-edge');
   const pin=page.locator('#inspector-pin');
   const workspace=page.locator('#workspace');
   if(await main.evaluate(node=>node.classList.contains('inspector-pinned')))
@@ -37,7 +36,8 @@ try{
   await page.mouse.move(650,500);
   await page.waitForFunction(()=>!document.querySelector('#editor-main')?.classList.contains('inspector-open'));
   if(await panel.getAttribute('aria-hidden')!=='true')throw Error('Inspector did not hide on leave');
-  await edge.click();
+  await page.mouse.move(1396,470);
+  await page.waitForFunction(()=>document.querySelector('#editor-main')?.classList.contains('inspector-open'));
   await pin.click();
   if(await pin.getAttribute('aria-pressed')!=='true')throw Error('Pin toggle did not pin inspector');
   if(!await main.evaluate(node=>node.classList.contains('inspector-pinned')))
