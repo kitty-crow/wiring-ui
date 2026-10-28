@@ -47,6 +47,8 @@ jobs:
         run: bun scripts/symbol-wiring-smoke.mts
       - name: Test inspector auto-hide, pin and localStorage in Chromium
         run: bun scripts/inspector-dock-smoke.mts
+      - name: Test footer version and shared Ko-fi widget in Chromium
+        run: bun scripts/footer-branding-smoke.mts
       - name: Verify deployable artefact
         run: |
           test -s dist/index.html
