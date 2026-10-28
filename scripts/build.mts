@@ -18,7 +18,16 @@ if (!built.success) throw new Error(built.logs.map(item => String(item)).join('\
 const output = built.outputs[0];
 if (!output) throw new Error('JavaScript entry-point output missing');
 const javascript = await output.text();
-const css = await readFile('styles/shell.css', 'utf8');
+const projectPackage:unknown=JSON.parse(await readFile('package.json','utf8'));
+if(!projectPackage||typeof projectPackage!=='object'||!('version' in projectPackage)||
+   typeof projectPackage.version!=='string'||!/^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(projectPackage.version))
+  throw new Error('Missing or invalid package version');
+const version=projectPackage.version;
+const css = [
+  await readFile('styles/shell.css', 'utf8'),
+  await readFile('vendor/pages/web/styles/kofi.css','utf8'),
+  await readFile('styles/kofi-overrides.css','utf8')
+].join('\\n');
 const pdfWorker = await readFile('node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs', 'utf8');
 const template = await readFile('index.template.html', 'utf8');
 const tokens = [
@@ -32,7 +41,7 @@ for (const token of tokens) {
 }
 // Callback replacements avoid `$&` and `$'` substitution in bundled JavaScript.
 const html = template
-  .replace('__APP_SHELL__', () => render2Mkup(createElement(EditorShell)))
+  .replace('__APP_SHELL__', () => render2Mkup(createElement(EditorShell,{version})))
   .replace('__INLINE_STYLES__', () => css.replaceAll('</style', '<\\/style'))
   .replace('__INLINE_PDF_WORKER__', () => pdfWorker.replaceAll('</script', '<\\/script'))
   .replace('__INLINE_JAVASCRIPT__', () => javascript.replaceAll('</script', '<\\/script'));
