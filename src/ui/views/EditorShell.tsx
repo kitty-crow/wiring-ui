@@ -4,7 +4,7 @@ import { ToolbarIcon } from './ToolbarIcons';
  * IDs and data-* hooks match EditorApp; its existing imperative event delegation
  * continues to work on ordinary DOM nodes emitted by this component.
  */
-export function EditorShell() {
+export function EditorShell({version = 'dev'}:{version?:string} = {}) {
   return <>
     <div id="app">
       <header className="topbar">
@@ -96,7 +96,28 @@ export function EditorShell() {
           <div id="inspector" aria-label="Properties" />
         </aside>
       </main>
-      <footer id="status" className="status" role="status">Ready</footer>
+      <footer className="status">
+        <span id="status" className="status-message" role="status">Ready</span>
+        <span className="status-spacer" />
+        <span className="status-meta">
+          <span data-version="" title="Wiring UI version">v{version}</span>
+          <span className="footer-links">
+            <a className="pages-kofi-link" href="https://ko-fi.com/kittycrow"
+              target="_blank" rel="noopener noreferrer"
+              title="Support Kitty Crow on Ko-fi">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 7h14v7a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6Z" />
+                <path d="M18 9h2a2 2 0 0 1 0 4h-2" />
+                <path d="M3 3h16" />
+                <path d="M9.4 11.3c.6-1.2 1.8-1 2.4 0 .6-1 1.8-1.2 2.4 0 0 1.2-2.4 2.8-2.4 2.8s-2.4-1.6-2.4-2.8Z" />
+              </svg>
+              Buy me a coffee
+            </a>
+          </span>
+        </span>
+      </footer>
     </div>
     <input id="file-input" type="file" accept=".json,.html,.wiring.json,application/json,text/html" />
     <input id="template-input" type="file"
