@@ -1,5 +1,8 @@
 # Wiring UI
 
+**Current beta: v0.6.0** — see [Changelog](CHANGELOG.md) for the
+26–28 October 2026 feature history and pre-1.0 versioning policy.
+
 An offline-first, canvas-based electronic wiring diagram editor. Draw component terminal headers, route and edit orthogonal cables, annotate drawings, place electrical symbols, and export a completely self-contained HTML document.
 
 ## Features
