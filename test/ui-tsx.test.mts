@@ -149,3 +149,14 @@ test('properties pin needle is centred beneath the pin body',()=>{
   expect(markup).toContain('M12 16v6');
   expect(markup).not.toContain('transform="translate');
 });
+
+test('footer displays build-injected version and persistent official Ko-fi link',()=>{
+  const html=render2Mkup(createElement(EditorShell,{version:'2.3.4'}));
+  expect(html).toContain('data-version=""');
+  expect(html).toContain('v2.3.4');
+  expect(html).toContain('id="status"');
+  expect(html).toContain('href="https://ko-fi.com/kittycrow"');
+  expect(html).toContain('class="pages-kofi-link"');
+  expect(html).toContain('target="_blank"');
+  expect(html).toContain('rel="noopener noreferrer"');
+});
