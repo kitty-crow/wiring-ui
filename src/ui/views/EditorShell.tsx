@@ -88,9 +88,8 @@ export function EditorShell() {
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
                 stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"
                 strokeLinejoin="round" aria-hidden="true">
-                <path d="m16 3 5 5-3.5 1.5-.5 4.5 2 2-3 3-3-3-4.5.5L7 20l-4-4 3.5-1.5.5-4.5-2-2 3-3 2 2 4.5-.5Z"
-                  transform="translate(2 -2) scale(.82)"/>
-                <path d="M4 20 11 13"/>
+                <path d="M8 3h8m-7 0v5l-3 5v3h12v-3l-3-5V3"/>
+                <path d="M12 16v6"/>
               </svg>
             </button>
           </div>
