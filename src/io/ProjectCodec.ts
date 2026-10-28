@@ -50,6 +50,14 @@ export class ProjectCodec {
   }
   public exportHtml(project:Project):void {
     const copy=document.documentElement.cloneNode(true) as HTMLElement;
+    // The optional third-party widget is recreated when an exported editor opens.
+    // Never embed live Ko-fi iframes or injected external scripts into the export.
+    copy.querySelectorAll(
+      '.floatingchat-container-wrap,.floatingchat-container-wrap-mobi,'+
+      '.floating-chat-kofi-popup-iframe,.floating-chat-kofi-popup-iframe-mobi,'+
+      '.floating-chat-kofi-popup-iframe-closer,.floating-chat-kofi-popup-iframe-closer-mobi,'+
+      'script[src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"]'
+    ).forEach(node=>node.remove());
     const embedded=copy.querySelector('#embedded-project');
     if(!embedded)throw new Error('Project template not found');
     embedded.textContent=JSON.stringify(project).replace(/</g,'\\u003c');
