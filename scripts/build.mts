@@ -20,14 +20,14 @@ if (!output) throw new Error('JavaScript entry-point output missing');
 const javascript = await output.text();
 const projectPackage:unknown=JSON.parse(await readFile('package.json','utf8'));
 if(!projectPackage||typeof projectPackage!=='object'||!('version' in projectPackage)||
-   typeof projectPackage.version!=='string'||!/^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(projectPackage.version))
+   typeof projectPackage.version!=='string'||!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(projectPackage.version))
   throw new Error('Missing or invalid package version');
 const version=projectPackage.version;
 const css = [
   await readFile('styles/shell.css', 'utf8'),
   await readFile('vendor/pages/web/styles/kofi.css','utf8'),
   await readFile('styles/kofi-overrides.css','utf8')
-].join('\\n');
+].join('\n');
 const pdfWorker = await readFile('node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs', 'utf8');
 const template = await readFile('index.template.html', 'utf8');
 const tokens = [
