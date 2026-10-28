@@ -138,3 +138,14 @@ test('document actions precede the right-aligned brand and document title',()=>{
   expect(spacer).toBeLessThan(brand);
   expect(brand).toBeLessThan(document);
 });
+
+test('properties pin needle is centred beneath the pin body',()=>{
+  const html=render2Mkup(createElement(EditorShell));
+  const start=html.indexOf('id="inspector-pin"');
+  const end=html.indexOf('</button>',start);
+  expect(start).toBeGreaterThan(0);
+  const markup=html.slice(start,end);
+  expect(markup).toContain('M8 3h8m-7 0v5l-3 5v3h12v-3l-3-5V3');
+  expect(markup).toContain('M12 16v6');
+  expect(markup).not.toContain('transform="translate');
+});
